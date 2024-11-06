@@ -1,0 +1,241 @@
+.encode-table {
+    top: 0%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+} 
+.encode-table thead tr {
+    font-size: large;
+    font-weight: normal;
+    /* background-color: #F1F7F9; */
+    background-color: var(--primary);
+    color: var(--contrast);
+    text-align: left;
+}
+.encode-table th, .encode-table td {
+    padding: 18px;
+}
+.encode-table th.amount, .encode-table td.amount {
+    padding-right: 40px;
+}
+.encode-table tbody td {
+    padding: 25px;
+}
+.encode-table tbody tr {
+    font-size: large;
+    border-bottom: 2px solid var(--border);
+}
+.encode-table tbody tr:last-of-type {
+    border-bottom: 0;
+    font-weight: bold;
+}
+
+.quantity {
+    text-align: right;
+    min-width: 35px;
+}
+.name {
+    text-align: left;
+    min-width: 250px;
+}
+.price {
+    text-align: right;
+    min-width: 50px;
+}
+.discount {
+    text-align: center;
+}
+.amount {
+    text-align: right;
+    min-width: 115px;
+}
+
+.table-container {
+    position: absolute;
+    top: 15%;
+    width: 1200px;
+    height: 650px;
+}
+
+input[type="text"] {
+    width: 40px;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: large;
+    margin-right: 40px;
+}
+input[name="remarks"] {
+    width: 120px;
+}
+
+tr[tabindex="0"]:focus {
+    outline: 1px solid #EFE9AC; 
+    background-color: #FDF7C1;
+    /* background-color: var(--contrast);  */
+}
+
+.sale-total {
+    font-size: x-large;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+.item-select {
+    position: absolute;
+    z-index: 999;
+    width: 50%;
+    height: 70%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: solid 2px var(--primary);
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+
+.select-table {
+    top: 0%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    border-radius: 5px;
+    /* overflow: hidden; */
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+    color: #1F2F34;
+} 
+
+.select-table thead tr {
+    font-size: large;
+    font-weight: normal;
+    background-color: #F1F7F9;
+    text-align: left;
+}
+.select-table th, .select-table td {
+    padding: 18px;
+}
+.select-table th.amount, .select-table td.amount {
+    padding-right: 40px;
+}
+.select-table tbody td {
+    padding: 25px;
+}
+.select-table tbody tr {
+    font-size: large;
+    border-bottom: 2px solid #EBEFF2;
+}
+.select-table tbody tr:last-of-type {
+    border-bottom: 0;
+}
+
+.price-display {
+    position: absolute;
+    top: 10%;
+    width: 745.61px;
+    font-weight: bold;
+    font-size: 40px;
+    padding: 30px;
+    border-radius: 10px;
+    border: 3px solid #FDD3DC;
+    background-color: #FDE6EB;
+    color: #BD336B;
+}
+
+.select-description {
+    text-align: left;
+    min-width: 450px;
+}
+.select-price {
+    text-align: right;
+    min-width: 90px;
+}
+
+.select-code {
+    text-align: left;
+    min-width: 85px;
+}
+
+.select-table-container {
+    position: relative;
+    top: 15%;
+    max-height: 50%;
+    border-radius: 5px;
+    overflow-y: auto;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+
+.select-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+
+
+/* Internet checkbox */
+.checkbox-wrapper-2 .ikxBAC {
+    appearance: none;
+    background-color: #dfe1e4;
+    border-radius: 72px;
+    border-style: none;
+    flex-shrink: 0;
+    height: 20px;
+    margin: 0;
+    position: relative;
+    width: 30px;
+    transform: scale(1.5);
+}
+
+.checkbox-wrapper-2 .ikxBAC::before {
+    bottom: -6px;
+    content: "";
+    left: -6px;
+    position: absolute;
+    right: -6px;
+    top: -6px;
+}
+
+.checkbox-wrapper-2 .ikxBAC,
+.checkbox-wrapper-2 .ikxBAC::after {
+    transition: all 100ms ease-out;
+}
+
+.checkbox-wrapper-2 .ikxBAC::after {
+    background-color: #fff;
+    border-radius: 50%;
+    content: "";
+    height: 14px;
+    left: 3px;
+    position: absolute;
+    top: 3px;
+    width: 14px;
+}
+
+.checkbox-wrapper-2 input[type=checkbox] {
+    cursor: default;
+}
+
+.checkbox-wrapper-2 .ikxBAC:hover {
+    background-color: #c9cbcd;
+    transition-duration: 0s;
+}
+
+.checkbox-wrapper-2 .ikxBAC:checked {
+    background-color: #6e79d6;
+}
+
+.checkbox-wrapper-2 .ikxBAC:checked::after {
+    background-color: #fff;
+    left: 13px;
+}
+
+.checkbox-wrapper-2 :focus:not(.focus-visible) {
+    outline: 0;
+}
+
+.checkbox-wrapper-2 .ikxBAC:checked:hover {
+    background-color: #535db3;
+}

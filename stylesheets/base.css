@@ -1,0 +1,180 @@
+@font-face {
+    font-family: "Graphik";
+    src: url("/stylesheets/fonts/GraphikRegular.otf") format("truetype");
+    font-weight: normal;
+}
+@font-face {
+    font-family: "Graphik";
+    src: url("/stylesheets/fonts/GraphikMedium.otf") format("truetype");
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: "Real";
+    src: url("/stylesheets/fonts/Real\ Text\ Regular.otf") format("truetype");
+    font-weight: normal;
+}
+@font-face {
+    font-family: "Real";
+    src: url("/stylesheets/fonts/Real\ Text\ Medium.otf") format("truetype");
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: "Poppins";
+    src: url("/stylesheets/fonts/Poppins-Medium.ttf") format("truetype");
+    font-weight: normal;
+}
+@font-face {
+    font-family: "Poppins";
+    src: url("/stylesheets/fonts/Poppins-Bold.ttf") format("truetype");
+    font-weight: bold;
+}
+
+@font-face {
+    font-family: "SF";
+    src: url("/stylesheets/fonts/SFPRODISPLAYREGULAR.OTF") format("truetype");
+    font-weight: normal;
+}
+@font-face {
+    font-family: "SF";
+    src: url("/stylesheets/fonts/SFPRODISPLAYMEDIUM.OTF") format("truetype");
+    font-weight: bold;
+}
+
+:root {
+    --primary: #3e3e3e;
+    --contrast: #f2f3f5;
+    --border: #CED2D9;
+    --theme: #EE2225;
+    --table-border: #EBEFF2;
+    color: var(--primary);
+    font-family: "SF";
+    font-weight: normal;
+    align-items: center;
+    box-sizing: border-box;
+    /* border: solid 1px #E6E6EA; */
+    letter-spacing: 0.3px;
+}
+
+.flex {
+    display: flex;
+}
+
+.column {
+    flex-direction: column;
+}
+
+.center {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    vertical-align: middle;
+}
+
+body {
+    justify-content: center;
+    background-color: #3b3b43;
+    margin: 0;
+}
+
+.body-div { 
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+    background-color: #FAFAFA;
+}
+
+input, select, textarea, button {
+    font-family: "SF";
+}
+
+.no-margin {
+    margin: 0;
+}
+.no-left-margin {
+    margin-left: 0;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.title-card {
+    font-size: x-large;
+    font-weight: bold;
+    margin-bottom: 25px;
+}
+
+/* HEADER */
+.header-div {
+    position: absolute;
+    /* z-index: 1; */
+    justify-self: flex-start;
+    align-self: flex-start;
+    height: 70px;
+    width: 100%;
+    background-color: white;
+    border-bottom: solid 2px var(--border);
+    box-shadow: rgba(239, 239, 239, 0.35) 0px 1px 10px;
+}
+
+.logo {
+    max-height: 25px;
+    position: absolute;
+    margin-left: 150px;
+    top: 50%;
+    transform: translate(0%, -50%);
+}
+
+ul {
+    position: absolute;
+    top: 50%;
+    left: 12%;
+    transform: translate(0%, -50%);
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+li {
+    float: left;
+}
+li a {
+    display: block;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: large;
+    font-weight: bold;
+    text-decoration: none;
+    color: #3e3e3e;
+    transition: background-color 0.3s ease;
+} li a.header-button:hover, .on-page {
+    background-color: #f4f4f5;
+}
+
+.header-divider {
+    color: #E4E4E7;
+    font-size: larger;
+    margin-right: 30px;
+    margin-left: 30px;
+}
+
+.sign-out {
+    /* max-height: 25px; */
+    position: absolute;
+    margin-right: 150px;
+    right: 0%;
+    top: 50%;
+    transform: translate(0%, -50%);
+}
+.sign-out-button {
+    color: #767987;
+} .sign-out-button:hover {
+    color: red;
+    text-decoration: none;
+}

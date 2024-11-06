@@ -1,0 +1,139 @@
+<html>
+    <head>
+        <title>Generate Reports</title>
+        <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/generate-reports.css">
+    </head>
+    <body>
+        <div class="body-div">
+            {{!-- Header --}}
+            <div class="header-div">
+                <img class="logo" src="../images/logo.png">
+                <div class="flex center">
+                    <ul>
+                        <li><a class="header-divider">|</a></li>
+                        <li><a class="header-button" href="/home">Home</a></li>
+                        <li><a class="header-divider">></a></li>
+                        <li><a class="header-button on-page">Generate Reports</a></li>
+                    </ul>
+                </div>
+                <div class="sign-out">
+                    <div>
+                        <span>{{ user }}</span> <br />
+                        <a class="sign-out-button" href="/">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex column">
+                <span class="title-card">Generate Reports</span>
+                <div class="border flex center">
+                    <form class="flex left column report-form" id="report-form" action="/reports" method="post">
+                        <div class="form-option flex column left">
+                            <span class="bold">Report Type: </span>
+                            <select class="no-left-margin" name="report-type" id="report-type">
+                                <option></option>
+                                <option>Sales</option>
+                                <option>Deliveries</option>
+                                <option>Item Performance</option>
+                                <option>Profit</option>
+                                <option>Item Aging</option>
+                                <option>Stock Card</option>
+                            </select>
+                        </div>
+                        <div class="form-option flex column left">
+                            <span class="bold">Report Summary: </span>
+                            
+                            <select class="no-left-margin" name="report-aggregate" id="report-aggregate">
+                                <option></option>
+                                <option>Day</option>
+                                <option>Week</option>
+                                <option>Month</option>
+                                <option>Year</option>
+                            </select>
+                        </div>
+                        <div class="form-option flex column left">
+                            <span class="bold">Date Range: </span>
+                            <span>
+                                <input class="date no-left-margin" name="start-date" type="date" id="report-start-date" />
+                                <span> - </span>
+                                <input class="date" name="end-date" type="date" id="report-end-date" />
+                            </span>
+                        </div>
+
+                        <br />
+
+                        <button class="button" onclick="return validateFields()" type="submit">
+                            Generate Report
+                        </button>
+                        <span class="error-message" id="error-message" hidden></span>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </body>
+
+    <script>
+        const type = document.getElementById("report-type");
+        const aggregate = document.getElementById("report-aggregate");
+        const start = document.getElementById("report-start-date");
+        const end = document.getElementById("report-end-date");
+
+        const elements = [type, aggregate, start, end];
+
+        const error = document.getElementById("error-message")
+
+        elements.forEach((element, index) => {
+            element.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    const nextIndex = (index + 1) % elements.length;
+                    elements[nextIndex].focus();
+                }
+            });
+
+            element.addEventListener("focus", () => {
+                lastFocusedElement = element;
+            });
+        });
+
+        document.addEventListener("focusout", (event) => {
+            setTimeout(() => {
+                if (!document.activeElement || !elements.includes(document.activeElement)) {
+                    lastFocusedElement.focus();
+                }
+            }, 0);
+        });
+
+        window.onload = () => {
+            elements[0].focus();
+        };
+
+        error.addEventListener("click", (event) => {
+            error.hidden = true;
+        });
+
+        function validateFields() {
+            const typeValue = type.value; 
+            const aggregateValue = aggregate.value; 
+            const startValue = start.value; 
+            const endValue = end.value; 
+
+            const error = document.getElementById("error-message")
+
+            if (!typeValue || !aggregateValue || !startValue || !endValue) {
+                error.textContent = "Please fill out all fields";
+                error.hidden = false;
+                return false; 
+            }
+
+            if (new Date(startValue) >= new Date(endValue)) {
+                error.textContent = "Start date must be before end date";
+                error.hidden = false;
+                return false; 
+            }
+
+            return true; 
+        }
+    </script>
+</html>

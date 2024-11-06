@@ -1,0 +1,40 @@
+<html>
+    <head>
+        <title>Login</title>
+        <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/login.css">
+    </head>
+    <body>
+        <div class="body-div" login-status-data="{{ status }}">
+            <form id="login-form" action="/verify-login" method="post">
+                <div class="login-container">
+                    <img src="images/logo-full.png" alt="Logo" class="logo-full" width="150">
+                    <input id="password" type="password" name="password" placeholder="Password" required>
+                    <button type="submit" hidden>Login</button>
+                </div>
+            </form>
+            <span class="error-message" id="error-message" hidden>Invalid password</span>
+        </div>
+    </body>
+    <script>
+        const password = document.getElementById("password");
+        window.onload = () => {
+            password.focus();
+        };
+
+        const body = document.querySelector('.body-div');
+        const login = body.getAttribute('login-status-data');
+        const error = document.getElementById("error-message");
+
+        if (login === "false") {
+            error.hidden = false;
+        } else {
+            
+        }
+
+        error.addEventListener("click", (event) => {
+            error.hidden = true;
+        });
+        
+    </script>
+</html>

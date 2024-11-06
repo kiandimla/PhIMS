@@ -1,0 +1,63 @@
+.form-option {
+    margin: 15px;
+}
+
+.left {
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+select, input, button {
+    padding: 2px;
+    font-size: medium;
+    border-radius: 6px;
+    margin: 5px;
+    font-family: "SF";
+}
+
+button {
+    border-radius: 10px;
+    padding: 10px;
+    align-self: center;
+    background-color: white;
+    color: black;
+    font-weight: bold;
+    border: solid 2px var(--border);
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+    transition: background-color 0.3s ease;
+} button:hover {
+    background-color: black;
+    border: solid 2px black;
+    color: white;
+}
+
+.error-message {
+    color: white;
+    background-color: red;
+    padding: 10px;
+    border-radius: 6px;
+    align-self: center;
+    position: absolute;
+    top: 75%;
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+    transition: background-color 0.3s ease;
+    user-select: none;
+} .error-message:hover {
+    background-color: tomato;
+}
+
+.date {
+    padding: 4px;
+    font-family: "SF";
+    border-radius: 6px;
+    border: solid 1px;
+}
+
+.border {
+    background-color: white;
+    width: 1280px;
+    height: 650px;
+    border-radius: 20px;
+    border: solid 2px var(--border);
+    /* box-shadow: rgba(239, 239, 239, 0.35) 0px 1px 10px; */
+}
