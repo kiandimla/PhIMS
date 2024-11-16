@@ -74,7 +74,7 @@
 
 body {
     justify-content: center;
-    background-color: #3b3b43;
+    background-color: #FAFAFA;
     margin: 0;
 }
 
@@ -86,10 +86,15 @@ body {
     justify-content: center;
     justify-self: center;
     background-color: #FAFAFA;
+    top: -72px;
 }
 
 input, select, textarea, button {
     font-family: "SF";
+}
+
+.blur {
+    filter: blur(3px);
 }
 
 .no-margin {
@@ -109,10 +114,26 @@ input, select, textarea, button {
     margin-bottom: 25px;
 }
 
+.large {
+    font-size: large;
+}
+
+.medium {
+    font-size: medium;
+}
+
+.no-margin {
+    margin: 0;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
 /* HEADER */
 .header-div {
     position: absolute;
-    /* z-index: 1; */
+    top: 0;
     justify-self: flex-start;
     align-self: flex-start;
     height: 70px;
@@ -126,6 +147,7 @@ input, select, textarea, button {
     max-height: 25px;
     position: absolute;
     margin-left: 150px;
+    margin-right: 30px;
     top: 50%;
     transform: translate(0%, -50%);
 }
@@ -133,7 +155,7 @@ input, select, textarea, button {
 ul {
     position: absolute;
     top: 50%;
-    left: 12%;
+    left: 14%;
     transform: translate(0%, -50%);
     list-style-type: none;
     margin: 0;

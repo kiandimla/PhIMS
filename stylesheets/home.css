@@ -51,8 +51,8 @@ a {
 
 .border {
     background-color: white;
-    width: 1000px;
-    height: 550px;
+    width: 700px;
+    height: 350px;
     border-radius: 20px;
     border: solid 2px var(--contrast);
     box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;

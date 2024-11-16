@@ -1,0 +1,397 @@
+.encode-table {
+    top: 0%;
+    margin-top: 20px;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+} 
+.encode-table thead tr {
+    font-size: large;
+    font-weight: normal;
+    /* background-color: #F1F7F9; */
+    background-color: var(--primary);
+    color: var(--contrast);
+    text-align: left;
+    border-bottom: 2px solid var(--primary);
+}
+.encode-table thead {
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+.encode-table th, .encode-table td {
+    padding: 18px;
+}
+.encode-table th.amount {
+    padding-right: 40px;
+}
+.encode-table tbody td {
+    padding: 15px;
+}
+.encode-table tbody tr {
+    font-size: large;
+    border-bottom: 2px solid var(--border);
+}
+.encode-table tbody tr:last-of-type {
+    border-bottom: 0;
+    font-weight: bold;
+}
+
+.quantity {
+    text-align: right;
+    min-width: 35px;
+}
+.name {
+    text-align: left;
+    min-width: 250px;
+}
+.price, .cost {
+    text-align: right;
+    min-width: 50px;
+}
+.discount, .expiry {
+    text-align: center;
+}
+.amount {
+    text-align: right;
+    min-width: 115px;
+}
+
+.table-container {
+    position: absolute;
+    top: 15%;
+    width: 1100px;
+    /* height: 650px; */
+}
+
+input[type="text"] {
+    width: 40px;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: large;
+}
+
+input[name="saleId"] {
+    width: 130px;
+    margin-left: 5px;
+}
+.si-container input {
+    width: 130px;
+}
+.si-container input:focus {
+    background-color: #ffdcd7;
+}
+
+.title-card {
+    margin-bottom: 10;
+}
+
+.si-container {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+    border: 1px solid var(--border);
+    background-color: white;
+    font-weight: bold;
+    margin-right: 20px;
+}
+.si-container button {
+    position: absolute;
+    right: 10px;
+}
+
+.discount-display {
+    font-size: 25px;
+    margin-left: 5px;
+    color: tomato;
+}
+
+button {
+    border-radius: 7px;
+    padding: 7.5px;
+    background-color: var(--primary);
+    color: var(--contrast);
+    font-weight: bold;
+    border: solid 2px var(--primary);
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+    transition: background-color 0.3s ease;
+} button:hover {
+    background-color: white;
+    border: solid 2px var(--primary);
+    color: black;
+}
+
+tr[tabindex="0"]:focus {
+    outline: 0px; 
+    background-color: #FDF7C1;
+}
+
+.sale-total {
+    font-size: x-large;
+}
+
+.item-select {
+    position: absolute;
+    width: 65%;
+    height: 70%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: solid 2px var(--primary);
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+
+.select-table {
+    top: 0%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    border-radius: 5px;
+    /* overflow: hidden; */
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+    color: #1F2F34;
+} 
+
+.select-table thead tr {
+    font-size: large;
+    font-weight: normal;
+    background-color: #F1F7F9;
+    text-align: left;
+}
+.select-table th, .select-table td {
+    padding: 18px;
+}
+.select-table th.amount, .select-table td.amount {
+    padding-right: 40px;
+}
+.select-table tbody td {
+    padding: 10px;
+}
+.select-table tbody tr {
+    font-size: large;
+    border-bottom: 2px solid #EBEFF2;
+}
+.select-table tbody tr:last-of-type {
+    border-bottom: 0;
+}
+
+.price-display {
+    position: absolute;
+    top: 10%;
+    width: 740.33px;
+    font-weight: bold;
+    font-size: 40px;
+    padding: 30px;
+    padding-left: 0;
+    padding-right: 0;
+    border-radius: 10px;
+    border: 3px solid #FDD3DC;
+    background-color: #FDE6EB;
+    color: #BD336B;
+}
+
+.select-description {
+    text-align: left;
+    min-width: 450px;
+}
+.select-price, .select-cost {
+    text-align: right;
+    min-width: 90px;
+}
+.select-code {
+    text-align: left;
+    min-width: 85px;
+}
+
+.select-table-container {
+    position: relative;
+    top: 15%;
+    max-height: 50%;
+    border-radius: 5px;
+    overflow-y: auto;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+
+.select-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+
+.overlay-input {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+    font-size: 40px;
+    font-weight: bold;
+    background-color: white;
+    padding: 15px;
+    border: solid 1px var(--border);
+    border-radius: 5px;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+input[name="qty-input"], input[name="discount-input"] {
+    font-size: 70px;
+    width: 250px;
+    padding: 25px;
+}
+input[name="expiry-input"] {
+    margin-top: 5px;
+    font-size: 30px;
+}
+input[name="remarks-input"] {
+    width: 250px;
+    margin-top: 5px;
+}
+input[name="remarks"] {
+    width: 350px;
+}
+.discount-overlay-input {
+    background-color: #CAFBF0;
+    border: solid 2px #9FF1DF;
+    color: #26877E;
+}
+.discount-overlay-input input {
+    color: #1d665f;
+    background-color: #fafffe;
+    border: solid 2px #9FF1DF;
+}
+.discount-overlay-input input:focus {
+    background-color: #fff2f0;
+}
+
+.error-message {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    color: white;
+    background-color: red;
+    font-size: small;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+
+    opacity: 0;
+    transition: opacity 0.5s ease; 
+} .error-message:hover {
+    background-color: tomato;
+}
+
+.supplier-table-container, .purpose-table-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+}
+
+.supplier-table, .purpose-table {
+    margin: 10px;
+    border-collapse: collapse;
+    border: solid 1px var(--primary);
+    font-size: 20px;
+}
+.supplier-table thead th, .purpose-table thead th {
+    text-align: left;
+    background-color: var(--border);
+    border-bottom: solid 1px var(--primary);
+}
+.supplier-table tbody tr, .purpose-table tbody tr {
+    border-bottom: solid 1px var(--primary);
+}
+.supplier-table tbody tr:focus, .purpose-table tbody tr:focus {
+    border: solid 1px #4a4ac4;
+    color: white;
+    background-color: #4a4ac4;
+}
+.supplier-table th, .supplier-table td, .purpose-table th, .purpose-table td {
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 50px;
+}
+input[type="date"] {
+    padding: 4px;
+    font-family: "SF";
+    border-radius: 6px;
+    border: solid var(--primary) 1px;
+}
+
+
+
+
+/* Internet checkbox */
+.checkbox-wrapper-2 .ikxBAC {
+    appearance: none;
+    background-color: #dfe1e4;
+    border-radius: 72px;
+    border-style: none;
+    flex-shrink: 0;
+    height: 20px;
+    margin: 0;
+    position: relative;
+    width: 30px;
+    transform: scale(1.5);
+}
+
+.checkbox-wrapper-2 .ikxBAC::before {
+    bottom: -6px;
+    content: "";
+    left: -6px;
+    position: absolute;
+    right: -6px;
+    top: -6px;
+}
+
+.checkbox-wrapper-2 .ikxBAC,
+.checkbox-wrapper-2 .ikxBAC::after {
+    transition: all 100ms ease-out;
+}
+
+.checkbox-wrapper-2 .ikxBAC::after {
+    background-color: #fff;
+    border-radius: 50%;
+    content: "";
+    height: 14px;
+    left: 3px;
+    position: absolute;
+    top: 3px;
+    width: 14px;
+}
+
+.checkbox-wrapper-2 input[type=checkbox] {
+    cursor: default;
+}
+
+.checkbox-wrapper-2 .ikxBAC:hover {
+    background-color: #c9cbcd;
+    transition-duration: 0s;
+}
+
+.checkbox-wrapper-2 .ikxBAC:checked {
+    background-color: #6e79d6;
+}
+
+.checkbox-wrapper-2 .ikxBAC:checked::after {
+    background-color: #fff;
+    left: 13px;
+}
+
+.checkbox-wrapper-2 :focus:not(.focus-visible) {
+    outline: 0;
+}
+
+.checkbox-wrapper-2 .ikxBAC:checked:hover {
+    background-color: #535db3;
+}

@@ -5,26 +5,25 @@
         <link rel="stylesheet" type="text/css" href="../stylesheets/generate-reports.css">
     </head>
     <body>
-        <div class="body-div">
-            {{!-- Header --}}
-            <div class="header-div">
-                <img class="logo" src="../images/logo.png">
-                <div class="flex center">
-                    <ul>
-                        <li><a class="header-divider">|</a></li>
-                        <li><a class="header-button" href="/home">Home</a></li>
-                        <li><a class="header-divider">></a></li>
-                        <li><a class="header-button on-page">Generate Reports</a></li>
-                    </ul>
-                </div>
-                <div class="sign-out">
-                    <div>
-                        <span>{{ user }}</span> <br />
-                        <a class="sign-out-button" href="/">Sign Out</a>
-                    </div>
+        {{!-- Header --}}
+        <div class="header-div">
+            <img class="logo" src="../images/logo.png">
+            <div class="flex center">
+                <ul>
+                    <li><a class="header-divider"></a></li>
+                    <li><a class="header-button" href="/home">Home</a></li>
+                    <li><a class="header-divider">></a></li>
+                    <li><a class="header-button on-page">Generate Reports</a></li>
+                </ul>
+            </div>
+            <div class="sign-out">
+                <div>
+                    <span>{{ user }}</span> <br />
+                    <a class="sign-out-button" href="/">Sign Out</a>
                 </div>
             </div>
-
+        </div>
+        <div class="body-div">
             <div class="flex column">
                 <span class="title-card">Generate Reports</span>
                 <div class="border flex center">

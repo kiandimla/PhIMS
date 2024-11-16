@@ -5,24 +5,23 @@
         <link rel="stylesheet" type="text/css" href="../stylesheets/home.css">
     </head>
     <body>
-        <div class="body-div">
-            {{!-- Header --}}
-            <div class="header-div">
-                <img class="logo" src="../images/logo.png">
-                <div class="flex center">
-                    <ul>
-                        <li><a class="header-divider">|</a></li>
-                        <li><a class="header-button on-page">Home</a></li>
-                    </ul>
-                </div>
-                <div class="sign-out">
-                    <div>
-                        <span>{{ user }}</span> <br />
-                        <a class="sign-out-button" href="/">Sign Out</a>
-                    </div>
+        {{!-- Header --}}
+        <div class="header-div">
+            <img class="logo" src="../images/logo.png">
+            <div class="flex center">
+                <ul>
+                    <li><a class="header-divider"></a></li>
+                    <li><a class="header-button on-page">Home</a></li>
+                </ul>
+            </div>
+            <div class="sign-out">
+                <div>
+                    <span>{{ user }}</span> <br />
+                    <a class="sign-out-button" href="/">Sign Out</a>
                 </div>
             </div>
-
+        </div>
+        <div class="body-div">
             <div class="flex column">
                 <span class="title-card">Home</span>
                 <div class="border flex center">
@@ -31,12 +30,12 @@
                             Sales
                         </button>
 
-                        <button href="/encode-deliveries">
+                        <button onclick="window.location.href='/encode-deliveries'">
                             Deliveries
                         </button>
 
                         <button onclick="window.location.href='/generate-reports'">
-                            Generate Reports
+                            Reports
                         </button>
 
                         <button href="/">

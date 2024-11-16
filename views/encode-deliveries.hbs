@@ -1,0 +1,782 @@
+<html>
+    <head>
+        <title>Encode Deliveries</title>
+        <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/encode.css">
+    </head>
+    <body>
+        {{!-- Header --}}
+        <div class="header-div">
+            <img class="logo" src="../images/logo.png">
+            <div class="flex center">
+                <ul>
+                    <li><a class="header-divider"></a></li>
+                    <li><a class="header-button" href="/home">Home</a></li>
+                    <li><a class="header-divider">></a></li>
+                    <li><a class="header-button on-page">Encode Deliveries</a></li>
+                </ul>
+            </div>
+            <div class="sign-out">
+                <div>
+                    <span>{{ user }}</span> <br />
+                    <a class="sign-out-button" href="/">Sign Out</a>
+                </div>
+            </div>
+        </div>
+        <div class="body-div">
+            <div class="flex column table-container">   
+                {{!-- <span class="title-card">Encode Sales</span> --}}
+                <form id="sale-form" action="/save-delivery" method="post">
+                    <button id="save-sale-button" onclick="return validateFields()" type="submit" hidden></button>
+                    <div class="flex">
+                        <div class="si-container">
+                            <input id="supplier-input-field" name="supplier" type="text" placeholder="Supplier" value="" readonly /> 
+                        </div>
+
+                        <div class="si-container">
+                            <input id="purpose-input-field" name="purpose" type="text" placeholder="Purpose" value="" readonly /> 
+                        </div>
+
+                        <div class="si-container">
+                            <input id="remarks-input-field" name="remarks" type="text" placeholder="Remarks" value="{{ remarksString }}" /> 
+                        </div>
+                    </div>
+                    
+                    <table class="encode-table">
+                        <thead>
+                            <tr>
+                                <th class="name">Description</th>
+                                <th class="quantity">Qty</th>
+                                <th class="expiry">Expiry</th>
+                                <th class="cost">Cost</th>
+                                <th class="amount">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{!-- <tr class="data></tr> goes here --}}
+
+                            <tr class="table-footer">
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td class="cost">Total :</td>
+                                <td class="sale-total amount">₱ 0.00 <input type="hidden" name="sale-total" value="" /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+        </div>
+        <div class="item-select flex column center">
+            <div class="price-display" tabindex="-1">
+                0.00
+            </div>
+            <div class="select-table-container">
+                <table class="select-table">
+                    <thead>
+                        <tr>
+                            <th class="select-description">Description</th>
+                            <th class="select-price">Cost</th>
+                            <th class="select-code">Item Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each plu}}
+                            <tr tabindex="0">
+                                <td class="select-description">{{ itemName }}</td>
+                                <td class="select-cost">{{ cost }}</td>
+                                <td class="select-code">{{ itemId }}</td>
+                                <td class="select-isPerishable" hidden>{{ isPerishable }}</td>
+                            </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="supplier-table-container" hidden>
+            <table class="supplier-table">
+                <thead>
+                    <tr>
+                        <th>
+                            Supplier
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="supplier">
+                        <tr tabindex="0">
+                            <td>TGP PHARMA</td>
+                        </tr>
+                        <tr tabindex="0">
+                            <td>CNN</td>
+                        </tr>
+                        <tr tabindex="0">
+                            <td>PITC</td>
+                        </tr>
+                        <tr tabindex="0">
+                            <td>PPGI</td>
+                        </tr>
+                        <tr tabindex="0">
+                            <td>OTHERS</td>
+                        </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="purpose-table-container" hidden>
+            <table class="purpose-table">
+                <thead>
+                    <tr>
+                        <th>
+                            Purpose
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="purpose">
+                        <tr tabindex="0">
+                            <td>DELIVERIES</td>
+                        </tr>
+                        <tr tabindex="0">
+                            <td>ADJUSTMENT</td>
+                        </tr>
+                        <tr tabindex="0">
+                            <td>PCOUNT</td>
+                        </tr>
+                        <tr tabindex="0">
+                            <td>TRANSFER</td>
+                        </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="qty-input" class="overlay-input flex column">
+            Enter Quantity
+            <input name="qty-input" type="text" />
+        </div>
+
+        <div id="expiry-input" class="overlay-input flex column">
+            Enter Expiry
+            <input name="expiry-input" type="date" />
+        </div> 
+        <span class="error-message" id="error-message" hidden>SI Number is empty</span>
+    </body>
+<script>
+    function validateFields() {
+        const supplierInputField = document.querySelector('input[name="supplier"]');
+        const purposeInputField = document.querySelector('input[name="purpose"]');
+        const remarksInputField = document.querySelector('input[name="remarks"]');
+        const error = document.getElementById("error-message");
+        const dataRows = document.querySelectorAll('.encode-table tbody tr.data');
+
+        // Check if there are no items in the sale
+        if (dataRows.length === 0) {
+            error.hidden = false;
+            error.textContent = "Sale has no items"; 
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 5000);
+            return false;
+        }
+
+        // Check if any row's expiry cell still has a placeholder value of "mm/dd/yyyy"
+        for (const row of dataRows) {
+            const expiryCell = row.querySelector('.expiry');
+            if (expiryCell && expiryCell.textContent.trim() === "mm/dd/yyyy") {
+                error.hidden = false;
+                error.textContent = "Perishable items must have an expiry date";
+                error.style.opacity = 1;
+                setTimeout(() => {
+                    error.style.opacity = 0;
+                }, 5000);
+                return false;
+            }
+        }
+
+        // Check if supplier field is empty
+        if (supplierInputField.value.trim() === "") {
+            error.hidden = false;
+            error.textContent = "Supplier is required";
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 5000);
+            return false;
+        }
+
+        // Check if purpose field is empty
+        if (purposeInputField.value.trim() === "") {
+            error.hidden = false;
+            error.textContent = "Purpose is required";
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 5000);
+            return false;
+        }
+
+        // Check if remarks field is empty
+        if (remarksInputField.value.trim() === "") {
+            error.hidden = false;
+            error.textContent = "Remarks are required";
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 5000);
+            return false;
+        }
+
+        return true;
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const bodyDiv = document.querySelector('.body-div');
+        const encodeTableBody = document.querySelector('.encode-table tbody');
+
+        const itemSelect = document.querySelector(".item-select");
+        const pluRows = document.querySelectorAll(".select-table tbody tr");
+        const priceDisplay = document.querySelector(".price-display");
+
+        const qtyInput = document.getElementById("qty-input");
+        const qtyInputField = qtyInput.querySelector('input[name="qty-input"]');
+
+        const expiryInput = document.getElementById("expiry-input");
+        const expiryInputField = expiryInput.querySelector('input[name="expiry-input"]');
+
+        const error = document.getElementById("error-message");
+        const supplierInputField = document.getElementById("supplier-input-field");
+        const purposeInputField = document.getElementById("purpose-input-field");
+        const remarksInputField = document.getElementById("remarks-input-field");
+
+        
+        let searchBuffer = "";
+        let searchTimeout;
+        let lastFocusedRow = null; 
+        
+        supplierInputField.focus();
+        itemSelect.style.visibility = "hidden";
+        qtyInput.style.visibility = "hidden";
+        expiryInput.style.visibility = "hidden";
+
+        supplierInputField.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                document.querySelector(".supplier-table-container").hidden = false;
+                bodyDiv.classList.add("blur");
+
+                const firstRow = document.querySelector(".supplier-table tbody tr");
+                firstRow.focus();
+
+                event.stopPropagation();
+                event.preventDefault();
+            }
+        });
+
+        document.querySelectorAll(".supplier-table tbody tr").forEach(row => {
+            row.addEventListener("focusin", function() {
+                lastFocusedRow = this;
+            });
+
+            row.addEventListener("focusout", function(event) {
+                setTimeout(() => {
+                    const activeElement = document.activeElement;
+                    const isRowFocused = document.querySelector(".supplier-table tbody").contains(activeElement);
+
+                    if (!isRowFocused && lastFocusedRow) {
+                        lastFocusedRow.focus();
+                    }
+                }, 0);
+            });
+        });
+
+        document.querySelectorAll(".supplier-table tbody.supplier tr").forEach((row, index, rows) => {
+            row.addEventListener("keydown", function(event) {
+                if (event.key === "ArrowDown") { 
+                    if (index < rows.length - 1) {
+                        rows[index + 1].focus();
+                    }
+                    event.preventDefault();
+                } else if (event.key === "ArrowUp") { 
+                    if (index > 0) {
+                        rows[index - 1].focus();
+                    }
+                    event.preventDefault();
+                } else if (event.key === "Enter") { 
+                    supplierInputField.value = row.querySelector("td").textContent;
+
+                    document.querySelector(".supplier-table-container").hidden = true;
+                    bodyDiv.classList.remove("blur");
+
+                    document.getElementById("purpose-input-field").focus();
+
+                    event.stopPropagation();
+                    event.preventDefault();
+                }
+            });
+        });
+
+        purposeInputField.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                document.querySelector(".purpose-table-container").hidden = false;
+                bodyDiv.classList.add("blur");
+
+                const firstRow = document.querySelector(".purpose-table tbody.purpose tr");
+                firstRow.focus();
+
+                event.stopPropagation();
+                event.preventDefault();
+            }
+        });
+
+        document.querySelectorAll(".purpose-table tbody tr").forEach(row => {
+            row.addEventListener("focusin", function() {
+                lastFocusedPurposeRow = this;
+            });
+
+            row.addEventListener("focusout", function(event) {
+                setTimeout(() => {
+                    const activeElement = document.activeElement;
+                    const isRowFocused = document.querySelector(".purpose-table tbody").contains(activeElement);
+
+                    if (!isRowFocused && lastFocusedPurposeRow) {
+                        lastFocusedPurposeRow.focus();
+                    }
+                }, 0);
+            });
+        });
+
+        document.querySelectorAll(".purpose-table tbody.purpose tr").forEach((row, index, rows) => {
+            row.addEventListener("keydown", function(event) {
+                if (event.key === "ArrowDown") { 
+                    if (index < rows.length - 1) {
+                        rows[index + 1].focus();
+                    }
+                    event.preventDefault();
+                } else if (event.key === "ArrowUp") { 
+                    if (index > 0) {
+                        rows[index - 1].focus();
+                    }
+                    event.preventDefault();
+                } else if (event.key === "Enter") { 
+                    purposeInputField.value = row.querySelector("td").textContent;
+
+                    document.querySelector(".purpose-table-container").hidden = true;
+                    bodyDiv.classList.remove("blur");
+
+                    {{!-- change focus here --}}
+                    document.getElementById("remarks-input-field").focus();
+
+                    event.stopPropagation();
+                    event.preventDefault();
+                }
+            });
+        });
+
+        remarksInputField.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                remarksInputField.blur();
+                event.stopPropagation();
+            }
+        });
+
+        function updateRowAmount(row) {
+            const quantityCell = row.querySelector('.quantity');
+            const costCell = row.querySelector('.cost');
+            const amountCell = row.querySelector('.amount');
+
+            const quantity = parseInt(quantityCell.textContent, 10) || 0;
+            const costPrice = parseFloat(costCell.textContent) || 0;
+            const amount = quantity * costPrice;
+
+            const amountTextNode = amountCell.firstChild;
+            if (amountTextNode && amountTextNode.nodeType === Node.TEXT_NODE) {
+                amountTextNode.textContent = amount.toFixed(2);
+            } else {
+                amountCell.insertBefore(document.createTextNode(amount.toFixed(2)), amountCell.firstChild);
+            }
+
+            let amountInput = amountCell.querySelector('input[type="hidden"]');
+            amountInput.value = amount.toFixed(2);
+        }
+
+        function updateTotalAmount() {
+            const rows = encodeTableBody.querySelectorAll('tr.data');
+            let total = 0;
+            rows.forEach(row => {
+                const amountCell = row.querySelector('.amount');
+                const amount = parseFloat(amountCell.textContent) || 0;
+                total += amount;
+            });
+
+            const saleTotalCell = encodeTableBody.querySelector('.sale-total.amount');
+            const totalTextNode = saleTotalCell.firstChild; 
+            if (totalTextNode && totalTextNode.nodeType === Node.TEXT_NODE) {
+                totalTextNode.textContent = "₱ " + total.toFixed(2);
+            } else {
+                saleTotalCell.insertBefore(document.createTextNode("₱ " + total.toFixed(2)), saleTotalCell.firstChild);
+            }
+
+            const saleTotalInput = saleTotalCell.querySelector('input[type="hidden"][name="sale-total"]');
+            saleTotalInput.value = total.toFixed(2);
+        }
+
+        function addItemToEncodeTable(itemName, itemCost, itemId, isPerishable) {
+            const existingRow = Array.from(encodeTableBody.querySelectorAll('tr.data')).find(row => {
+                const nameCell = row.querySelector('.name');
+                return nameCell && nameCell.textContent.trim() === itemName.trim();
+            });
+
+            if (existingRow) {
+                const quantityCell = existingRow.querySelector('.quantity');
+                let quantity = parseInt(quantityCell.textContent, 10) || 0;
+                quantity += 1;
+
+                const quantityTextNode = quantityCell.firstChild;
+                if (quantityTextNode && quantityTextNode.nodeType === Node.TEXT_NODE) {
+                    quantityTextNode.textContent = quantity;
+                } else {
+                    quantityCell.insertBefore(document.createTextNode(quantity), quantityCell.firstChild);
+                }
+
+                const quantityInput = quantityCell.querySelector('input[name^="items"][name$="[quantity]"]');
+                quantityInput.value = quantity;
+
+                updateRowAmount(existingRow);
+                updateTotalAmount();
+
+                existingRow.focus();
+                lastFocusedRow = existingRow;
+
+                return existingRow;
+            } else {
+                const newRow = document.createElement('tr');
+                newRow.classList.add('data');
+
+                const rowCount = Array.from(encodeTableBody.querySelectorAll('tr.data')).length;
+                
+                console.log(isPerishable)
+
+                const expiryPlaceholder = isPerishable === "1" ? "mm/dd/yyyy" : "-";
+
+                newRow.innerHTML = `
+                    <td class="name">
+                        ${itemName} <input type="hidden" name="items[${rowCount}][name]" value="${itemName}" />
+                    </td>
+                    <td class="quantity">
+                        1 <input type="hidden" name="items[${rowCount}][quantity]" value="1" />
+                    </td>
+                    <td class="expiry">
+                        ${expiryPlaceholder} <input type="hidden" name="items[${rowCount}][expiry]" value="" />
+                    </td>
+                    <td class="cost">
+                        ${parseFloat(itemCost).toFixed(2)} <input type="hidden" name="items[${rowCount}][cost]" value="${parseFloat(itemCost).toFixed(2)}" />
+                    </td>
+                    <td class="amount">
+                        ${parseFloat(itemCost).toFixed(2)} <input type="hidden" name="items[${rowCount}][amount]" value="${parseFloat(itemCost).toFixed(2)}" />
+                    </td>
+                `;
+
+                encodeTableBody.insertBefore(newRow, encodeTableBody.lastElementChild);
+
+                updateRowAmount(newRow);
+                updateTotalAmount();
+
+                newRow.setAttribute("tabindex", "0");
+                newRow.addEventListener("keydown", handleRowKeyEvents);
+                newRow.addEventListener("focus", () => {
+                    lastFocusedRow = newRow;
+                });
+
+                return newRow;
+            }
+        }
+
+        qtyInputField.addEventListener("input", function () {
+            qtyInputField.value = qtyInputField.value.replace(/\D/g, '').slice(0, 2);
+
+            if (qtyInputField.value.startsWith('0')) {
+                qtyInputField.value = qtyInputField.value.slice(1);
+            }
+        });
+
+        function handleRowKeyEvents(event) {
+            const row = event.currentTarget;
+            const key = event.key;
+
+            if (key === 'ArrowDown' || key === 'ArrowUp') {
+                event.preventDefault();
+                const rows = encodeTableBody.querySelectorAll('tr.data');
+                const index = Array.from(rows).indexOf(row);
+
+                if (key === 'ArrowDown' && index < rows.length - 1) {
+                    rows[index + 1].focus();
+                }
+                if (key === 'ArrowUp' && index > 0) {
+                    rows[index - 1].focus();
+                }
+            }
+
+            if (key.toLowerCase() === 'q') {
+                qtyInput.style.visibility = "visible";
+                bodyDiv.classList.add("blur");
+
+                qtyInputField.focus();
+
+                qtyInputField.addEventListener("focusout", function handleFocusOut() {
+                    setTimeout(() => {
+                        if (document.activeElement !== qtyInputField) {
+                            qtyInputField.focus();
+                        }
+                    }, 0);
+                });
+
+                qtyInputField.addEventListener("keydown", function handleQtyInput(event) {
+                    if (event.key === "Enter") {
+                        const enteredQuantity = qtyInputField.value.trim() === "" 
+                            ? null 
+                            : parseInt(qtyInputField.value, 10);
+
+                        if (enteredQuantity !== null) {
+                            const quantityCell = row.querySelector('.quantity');
+                            const quantityTextNode = quantityCell.firstChild;
+
+                            if (quantityTextNode && quantityTextNode.nodeType === Node.TEXT_NODE) {
+                                quantityTextNode.textContent = enteredQuantity;
+                            } else {
+                                quantityCell.textContent = enteredQuantity;
+                            }
+
+                            const quantityInput = quantityCell.querySelector('input[type="hidden"]');
+                            quantityInput.value = enteredQuantity;
+
+                            updateRowAmount(row);
+                            updateTotalAmount();
+                        }
+
+                        qtyInput.style.visibility = "hidden";
+                        bodyDiv.classList.remove("blur");
+                        qtyInputField.removeEventListener("keydown", handleQtyInput);
+                        qtyInputField.value = ''; 
+                        row.focus();
+
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                });
+            }
+
+            if (key.toLowerCase() === 'e') {
+                const expiryCell = row.querySelector('.expiry');
+
+                if(expiryCell.textContent.trim() !== "-"){
+                    const expiryInput = document.querySelector('#expiry-input');
+                    const expiryInputField = expiryInput.querySelector('input[name="expiry-input"]');
+
+                    expiryInput.style.visibility = "visible";
+                    bodyDiv.classList.add("blur");
+
+                    expiryInputField.focus();
+
+                    expiryInputField.addEventListener("focusout", function handleFocusOut() {
+                        setTimeout(() => {
+                            if (document.activeElement !== expiryInputField) {
+                                expiryInputField.focus();
+                            }
+                        }, 0);
+                    });
+
+                    expiryInputField.addEventListener("keydown", function handleExpiryInput(event) {
+                        if (event.key === "Enter") {
+                            const enteredExpiry = expiryInputField.value;
+
+                            let formattedExpiry = 'mm/dd/yyyy';
+                            if (enteredExpiry) {
+                                const date = new Date(enteredExpiry);
+                                const month = String(date.getMonth() + 1).padStart(2, '0');
+                                const day = String(date.getDate()).padStart(2, '0');
+                                const year = date.getFullYear();
+                                formattedExpiry = `${month}/${day}/${year}`;
+                            }
+
+                            const expiryCell = row.querySelector('.expiry');
+                            const expiryTextNode = expiryCell.firstChild;
+
+                            if (expiryTextNode && expiryTextNode.nodeType === Node.TEXT_NODE) {
+                                expiryTextNode.textContent = formattedExpiry;
+                            } else {
+                                expiryCell.textContent = formattedExpiry;
+                            }
+
+                            const expiryInputHidden = expiryCell.querySelector('input[type="hidden"]');
+                            expiryInputHidden.value = formattedExpiry;
+
+                            expiryInput.style.visibility = "hidden";
+                            bodyDiv.classList.remove("blur");
+                            expiryInputField.removeEventListener("keydown", handleExpiryInput);
+                            expiryInputField.value = ''; 
+                            row.focus();
+
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                    });
+                }
+                
+            }
+
+            if (key === 'F2') {
+                const previousRow = row.previousElementSibling;
+                const nextRow = row.nextElementSibling;
+
+                row.remove();
+                updateTotalAmount();
+
+                if (previousRow) {
+                    previousRow.focus();
+                } else if (nextRow) {
+                    nextRow.focus();
+                }
+
+                event.preventDefault();
+            }
+        }
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "F5") {
+                event.preventDefault();
+                event.stopPropagation();
+                const saveSaleButton = document.querySelector("#save-sale-button");
+                saveSaleButton.click();
+            }
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "F9") {
+                event.preventDefault(); 
+                location.reload(); 
+            }
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "F10") {
+                event.preventDefault(); 
+                window.location.href = "/home"; 
+            }
+        });
+
+        error.addEventListener("click", (event) => {
+            error.hidden = true;
+        });
+
+        pluRows.forEach((row, index) => {
+            row.addEventListener("focus", function () {
+                const costCell = row.querySelector(".select-cost");
+                if (costCell) priceDisplay.textContent = "₱ " + costCell.textContent;
+                lastFocusedRow = row;
+            });
+            row.addEventListener("focusout", (event) => {
+                if (!event.relatedTarget || !event.relatedTarget.closest('.select-table tbody tr')) {
+                    if (lastFocusedRow) {
+                        lastFocusedRow.focus();
+                    }
+                }
+            });
+            row.addEventListener("keydown", function (event) {
+                const key = event.key;
+                if (key === "ArrowDown" && index < pluRows.length - 1) {
+                    pluRows[index + 1].focus();
+                    event.preventDefault();
+                } else if (key === "ArrowUp" && index > 0) {
+                    pluRows[index - 1].focus();
+                    event.preventDefault();
+                }
+                if (key === "Enter") { 
+                    const itemName = row.querySelector(".select-description").textContent;
+                    const itemCost = row.querySelector(".select-cost").textContent;
+                    const itemId = row.querySelector(".select-code").textContent;
+                    const isPerishable = row.querySelector(".select-isPerishable").textContent;
+                    const newRow = addItemToEncodeTable(itemName, itemCost, itemId, isPerishable);
+
+                    newRow.focus();
+                    lastFocusedRow = newRow;
+
+                    itemSelect.style.visibility = "hidden";
+                    bodyDiv.classList.remove("blur");
+
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                if (key.length === 1) {
+                    searchBuffer += key.toLowerCase();
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        searchBuffer = "";
+                    }, 500);
+
+                    function removeSpecialCharacters(str) {
+                        return str.replace(/[^a-zA-Z0-9]/g, "");
+                    }
+
+                    for (let i = 0; i < pluRows.length; i++) {
+                        const descriptionCell = pluRows[i].querySelector(".select-description");
+                        if (descriptionCell) {
+                            const cleanDescription = removeSpecialCharacters(descriptionCell.textContent.toLowerCase());
+                            const cleanSearchBuffer = removeSpecialCharacters(searchBuffer);
+                            if (cleanDescription.startsWith(cleanSearchBuffer)) {
+                                pluRows[i].focus();
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        document.addEventListener("keydown", function(event) {
+            const activeElement = document.activeElement;
+
+            const isSupplierInputFocused = activeElement === supplierInputField;
+            const isSupplierRowFocused = activeElement && activeElement.closest(".supplier-table tbody.supplier tr");
+
+            const isPurposeInputFocused = activeElement === purposeInputField;
+            const isRemarksInputFocused = activeElement === remarksInputField;
+            const isQtyInputFocused = activeElement === qtyInputField;
+            const isExpiryInputFocused = activeElement === expiryInputField;
+
+            if (event.key === "Enter" && !isSupplierInputFocused && !isRemarksInputFocused) {
+                itemSelect.style.visibility = "visible";
+                bodyDiv.classList.add("blur");
+
+                const firstPluRow = document.querySelector(".select-table tbody tr");
+                if (firstPluRow) firstPluRow.focus();
+                
+                event.preventDefault(); 
+            } else if (event.key === "Backspace" && !isSupplierRowFocused && !isQtyInputFocused && !isExpiryInputFocused) {
+                itemSelect.style.visibility = "hidden";
+                bodyDiv.classList.remove("blur");
+                
+            }
+        });
+
+        document.addEventListener("focusout", function () {
+            setTimeout(() => {
+                if (!document.activeElement || document.activeElement === document.body) {
+                    if (lastFocusedRow) lastFocusedRow.focus();
+                }
+            }, 0);
+        });
+
+        document.querySelectorAll('.select-table tbody tr').forEach(row => {
+            row.addEventListener('focus', (event) => {
+                event.target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                });
+            });
+        });
+    });
+</script>
+
+</html>

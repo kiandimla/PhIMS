@@ -1,102 +1,171 @@
 <html>
     <head>
-        <title>Generate Reports</title>
+        <title>Encode Sales</title>
         <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
-        <link rel="stylesheet" type="text/css" href="../stylesheets/encode-sales.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/encode.css">
     </head>
     <body>
-        <div class="body-div">
-            {{!-- Header --}}
-            <div class="header-div">
-                <img class="logo" src="../images/logo.png">
-                <div class="flex center">
-                    <ul>
-                        <li><a class="header-divider">|</a></li>
-                        <li><a class="header-button" href="/home">Home</a></li>
-                        <li><a class="header-divider">></a></li>
-                        <li><a class="header-button on-page">Encode Sales</a></li>
-                    </ul>
-                </div>
-                <div class="sign-out">
-                    <div>
-                        <span>{{ user }}</span> <br />
-                        <a class="sign-out-button" href="/">Sign Out</a>
-                    </div>
+        {{!-- Header --}}
+        <div class="header-div">
+            <img class="logo" src="../images/logo.png">
+            <div class="flex center">
+                <ul>
+                    <li><a class="header-divider"></a></li>
+                    <li><a class="header-button" href="/home">Home</a></li>
+                    <li><a class="header-divider">></a></li>
+                    <li><a class="header-button on-page">Encode Sales</a></li>
+                </ul>
+            </div>
+            <div class="sign-out">
+                <div>
+                    <span>{{ user }}</span> <br />
+                    <a class="sign-out-button" href="/">Sign Out</a>
                 </div>
             </div>
-
-            <div class="item-select flex column center">
-                <div class="price-display" tabindex="-1">
-                    ZZZZ
-                </div>
-                <div class="select-table-container">
-                    <table class="select-table">
+        </div>
+        <div class="body-div">
+            <div class="flex column table-container">   
+                {{!-- <span class="title-card">Encode Sales</span> --}}
+                <form id="sale-form" action="/save-sale" method="post">
+                    <button id="save-sale-button" onclick="return validateFields()" type="submit" hidden></button>
+                    <div class="flex">
+                        <div class="si-container">
+                            SI <input name="saleId" type="text" placeholder="SI Number" value="{{ lastSaleSi }}" /> 
+                        </div>
+                        <div class="si-container">
+                           Discount: <span class="discount-display"> 20%</span>
+                           <input name="discount" type="hidden" />
+                        </div>
+                    </div>
+                    
+                    <table class="encode-table">
                         <thead>
                             <tr>
-                                <th class="select-description">Description</th>
-                                <th class="select-price">Price</th>
-                                <th class="select-code">Item Code</th>
+                                <th class="quantity">Qty</th>
+                                <th class="name">Description</th>
+                                <th class="price">Unit Price</th>
+                                <th class="discount">Apply Discount</th>
+                                <th class="amount">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {{#each plu}}
-                                <tr>
-                                    <td class="select-description">{{ itemName }}</td>
-                                    <td class="select-price">{{ price }}</td>
-                                    <td class="select-code">{{ itemId }}</td>
-                                </tr>
-                            {{/each}}
+                            {{!-- <tr class="data></tr> goes here --}}
+
+                            <tr class="table-footer">
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td class="discount">Total :</td>
+                                <td class="sale-total amount">₱ 0.00 <input type="hidden" name="sale-total" value="" /></td>
+                            </tr>
                         </tbody>
                     </table>
-                </div>
+                </form>
             </div>
-
-            <div class="flex column table-container">
-                <span class="title-card">Encode Sales</span>
-                <table class="encode-table">
+        </div>
+        <div class="item-select flex column center">
+            <div class="price-display" tabindex="-1">
+                0.00
+            </div>
+            <div class="select-table-container">
+                <table class="select-table">
                     <thead>
                         <tr>
-                            <th class="quantity">Qty</th>
-                            <th class="name">Description</th>
-                            <th class="price">Unit Price</th>
-                            <th class="discount">Apply Discount</th>
-                            <th class="amount">Amount</th>
+                            <th class="select-description">Description</th>
+                            <th class="select-price">Price</th>
+                            <th class="select-code">Item Code</th>
                         </tr>
                     </thead>
                     <tbody>
-                        
-
-                        <tr>
-                            <td></td>
-                            <td>
-                                Discount: <input name="discount" type="text" placeholder="20">
-                                Discount Remarks: <input name="remarks" type="text" placeholder="Remarks">
-                            </td>
-                            <td></td>
-                            <td class="discount">Total :</td>
-                            <td class="sale-total amount">₱ 0</td>
-                        </tr>
+                        {{#each inventory}}
+                            <tr>
+                                <td class="select-description">{{ itemName }}</td>
+                                <td class="select-price">{{ price }}</td>
+                                <td class="select-code">{{ itemId }}</td>
+                                <td class="select-qty" hidden>{{ quantity }}</td>
+                            </tr>
+                        {{/each}}
                     </tbody>
                 </table>
             </div>
         </div>
+        <div id="qty-input" class="overlay-input flex column">
+            Enter Quantity
+            <input name="qty-input" type="text" />
+        </div> 
+        <div id="discount-input" class="overlay-input discount-overlay-input flex column">
+            Enter Discount
+            <input name="discount-input" type="text" placeholder="20" value=""/>
+            <input name="remarks-input" type="text" placeholder="Remarks" />
+        </div>
+        <span class="error-message" id="error-message" hidden>SI Number is empty</span>
     </body>
 <script>
+    function validateFields() {
+        const discountCheckboxes = document.querySelectorAll('.encode-table tbody tr.data .discount input[type="checkbox"]');
+        const remarksInputField = document.querySelector('input[name="remarks-input"]');
+        const saleIdInput = document.querySelector('input[name="saleId"]');
+        const error = document.getElementById("error-message");
+        const discountInput = document.getElementById("discount-input");
+        const discountInputField = discountInput.querySelector('input[name="discount-input"]');
+        const allDiscountsOff = Array.from(discountCheckboxes).every(checkbox => !checkbox.checked);
+        const dataRows = document.querySelectorAll('.encode-table tbody tr.data');
+
+        if (dataRows.length === 0) {
+            error.hidden = false;
+            error.textContent = "Sale has no items"; 
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 5000);
+            return false;
+        }
+
+        if (allDiscountsOff) {
+            remarksInputField.value = '';
+            document.querySelector('input[name="discount"]').value = '';
+        }
+
+        if (saleIdInput.value.trim() === "") {
+            error.hidden = false;
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0; 
+            }, 5000);
+            saleIdInput.focus();
+            return false;
+        }
+
+        return true;
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
-        const discountInput = document.querySelector('input[name="discount"]');
-        const saleTotalCell = document.querySelector('.sale-total.amount');
+        const bodyDiv = document.querySelector('.body-div');
+        const encodeTableBody = document.querySelector('.encode-table tbody');
+
+        const itemSelect = document.querySelector(".item-select");
         const pluRows = document.querySelectorAll(".select-table tbody tr");
         const priceDisplay = document.querySelector(".price-display");
-        const encodeTableBody = document.querySelector('.encode-table tbody');
-        const itemSelect = document.querySelector(".item-select");
-        const tableContainer = document.querySelector(".table-container");
+
+        const qtyInput = document.getElementById("qty-input");
+        const qtyInputField = qtyInput.querySelector('input[name="qty-input"]');
+        const discountInput = document.getElementById("discount-input");
+        const discountInputField = discountInput.querySelector('input[name="discount-input"]');
+
+        const saleIdInput = document.querySelector('input[name="saleId"]');
+        const error = document.getElementById("error-message");
+
         let searchBuffer = "";
         let searchTimeout;
+        let lastFocusedRow = null; 
 
         itemSelect.style.visibility = "hidden";
+        qtyInput.style.visibility = "hidden";
+        discountInput.style.visibility = "hidden";
+        saleIdInput.focus();
 
         function getDiscountRate() {
-            const discountValue = parseFloat(discountInput.value) || parseFloat(discountInput.placeholder);
+            const discountValue = parseFloat(discountInputField.value) || parseFloat(discountInputField.placeholder);
             return discountValue / 100;
         }
 
@@ -105,99 +174,351 @@
             const priceCell = row.querySelector('.price');
             const amountCell = row.querySelector('.amount');
             const discountCheckbox = row.querySelector('.discount input[type="checkbox"]');
+
             const quantity = parseInt(quantityCell.textContent, 10) || 0;
             const unitPrice = parseFloat(priceCell.textContent) || 0;
-            const discountRate = discountCheckbox.checked ? getDiscountRate() : 0;
+            const discountRate = discountCheckbox && discountCheckbox.checked ? getDiscountRate() : 0;
             const amount = quantity * unitPrice * (1 - discountRate);
-            amountCell.textContent = amount.toFixed(2);
+
+            const amountTextNode = amountCell.firstChild;
+            if (amountTextNode && amountTextNode.nodeType === Node.TEXT_NODE) {
+                amountTextNode.textContent = amount.toFixed(2);
+            } else {
+                amountCell.insertBefore(document.createTextNode(amount.toFixed(2)), amountCell.firstChild);
+            }
+
+            let amountInput = amountCell.querySelector('input[type="hidden"]');
+            amountInput.value = amount.toFixed(2);
         }
 
         function updateTotalAmount() {
-            const rows = encodeTableBody.querySelectorAll('tr[row-num-data]');
+            const rows = encodeTableBody.querySelectorAll('tr.data');
             let total = 0;
             rows.forEach(row => {
                 const amountCell = row.querySelector('.amount');
                 const amount = parseFloat(amountCell.textContent) || 0;
                 total += amount;
             });
-            saleTotalCell.textContent = "₱ " + total.toFixed(2);
+
+            const saleTotalCell = encodeTableBody.querySelector('.sale-total.amount');
+            const totalTextNode = saleTotalCell.firstChild; 
+            if (totalTextNode && totalTextNode.nodeType === Node.TEXT_NODE) {
+                totalTextNode.textContent = "₱ " + total.toFixed(2);
+            } else {
+                saleTotalCell.insertBefore(document.createTextNode("₱ " + total.toFixed(2)), saleTotalCell.firstChild);
+            }
+
+            const saleTotalInput = saleTotalCell.querySelector('input[type="hidden"][name="sale-total"]');
+            saleTotalInput.value = total.toFixed(2);
         }
 
         function addItemToEncodeTable(itemName, itemPrice, itemId) {
-            const newRow = document.createElement('tr');
-            const rowCount = encodeTableBody.querySelectorAll('tr[row-num-data]').length + 1;
-            
-            newRow.setAttribute('row-num-data', rowCount);
-            newRow.innerHTML = `
-                <td class="quantity">1</td>
-                <td class="name">${itemName}</td>
-                <td class="price">${parseFloat(itemPrice).toFixed(2)}</td>
-                <td class="discount">
-                    <div class="flex center">
-                        <div class="checkbox-wrapper-2">
-                            <input type="checkbox" class="sc-gJwTLC ikxBAC">
-                        </div>
-                    </div>
-                </td>
-                <td class="amount">${parseFloat(itemPrice).toFixed(2)}</td>
-            `;
-
-            encodeTableBody.insertBefore(newRow, encodeTableBody.lastElementChild); 
-            updateRowAmount(newRow);
-            updateTotalAmount();
-
-            newRow.setAttribute("tabindex", "0");
-            newRow.addEventListener("keydown", handleRowKeyEvents);
-            const discountCheckbox = newRow.querySelector('.discount input[type="checkbox"]');
-            discountCheckbox.addEventListener("mousedown", function () {
-                discountCheckbox.addEventListener("change", function () {
-                    updateRowAmount(newRow);
-                    updateTotalAmount();
-                }, { once: true });
+            const existingRow = Array.from(encodeTableBody.querySelectorAll('tr.data')).find(row => {
+                const nameCell = row.querySelector('.name');
+                return nameCell && nameCell.textContent.trim() === itemName.trim();
             });
 
-            return newRow;
+            if (existingRow) {
+                const quantityCell = existingRow.querySelector('.quantity');
+                let quantity = parseInt(quantityCell.textContent, 10) || 0;
+                quantity += 1;
+
+                const quantityTextNode = quantityCell.firstChild;
+                if (quantityTextNode && quantityTextNode.nodeType === Node.TEXT_NODE) {
+                    quantityTextNode.textContent = quantity;
+                } else {
+                    quantityCell.insertBefore(document.createTextNode(quantity), quantityCell.firstChild);
+                }
+
+                const quantityInput = quantityCell.querySelector('input[name^="items"][name$="[quantity]"]');
+                quantityInput.value = quantity;
+
+                updateRowAmount(existingRow);
+                updateTotalAmount();
+
+                existingRow.focus();
+                lastFocusedRow = existingRow;
+
+                return existingRow;
+            } else {
+                const newRow = document.createElement('tr');
+                newRow.classList.add('data');
+
+                const rowCount = Array.from(encodeTableBody.querySelectorAll('tr.data')).length;
+
+                newRow.innerHTML = `
+                    <td class="quantity">
+                        1 <input type="hidden" name="items[${rowCount}][quantity]" value="1" />
+                    </td>
+                    <td class="name">
+                        ${itemName} <input type="hidden" name="items[${rowCount}][name]" value="${itemName}" />
+                    </td>
+                    <td class="price">
+                        ${parseFloat(itemPrice).toFixed(2)} <input type="hidden" name="items[${rowCount}][price]" value="${parseFloat(itemPrice).toFixed(2)}" />
+                    </td>
+                    <td class="discount">
+                        <div class="flex center">
+                            <div class="checkbox-wrapper-2">
+                                <input type="checkbox" name="items[${rowCount}][discount]" class="sc-gJwTLC ikxBAC" />
+                            </div>
+                        </div>
+                    </td>
+                    <td class="amount">
+                        ${parseFloat(itemPrice).toFixed(2)} <input type="hidden" name="items[${rowCount}][amount]" value="${parseFloat(itemPrice).toFixed(2)}" />
+                    </td>
+                `;
+
+                encodeTableBody.insertBefore(newRow, encodeTableBody.lastElementChild);
+
+                updateRowAmount(newRow);
+                updateTotalAmount();
+
+                newRow.setAttribute("tabindex", "0");
+                newRow.addEventListener("keydown", handleRowKeyEvents);
+                newRow.addEventListener("focus", () => {
+                    lastFocusedRow = newRow;
+                });
+
+                const discountCheckbox = newRow.querySelector('.discount input[type="checkbox"]');
+                discountCheckbox.addEventListener("mousedown", function () {
+                    discountCheckbox.addEventListener("change", function () {
+                        updateRowAmount(newRow);
+                        updateTotalAmount();
+
+                        lastFocusedRow.focus();
+                    }, { once: true });
+                });
+
+                return newRow;
+            }
         }
+
+        qtyInputField.addEventListener("focusout", function handleFocusOut() {
+            setTimeout(() => {
+                if (document.activeElement !== qtyInputField) {
+                    qtyInputField.focus();
+                }
+            }, 0);
+        });
+
+        qtyInputField.addEventListener("input", function () {
+            qtyInputField.value = qtyInputField.value.replace(/\D/g, '').slice(0, 3);
+
+            if (qtyInputField.value.startsWith('0')) {
+                qtyInputField.value = qtyInputField.value.slice(1);
+            }
+        });
 
         function handleRowKeyEvents(event) {
             const row = event.currentTarget;
             const key = event.key;
-            
+
             if (key === 'ArrowDown' || key === 'ArrowUp') {
                 event.preventDefault();
-                const rows = encodeTableBody.querySelectorAll('tr[row-num-data]');
+                const rows = encodeTableBody.querySelectorAll('tr.data');
                 const index = Array.from(rows).indexOf(row);
-                if (key === 'ArrowDown' && index < rows.length - 1) rows[index + 1].focus();
-                if (key === 'ArrowUp' && index > 0) rows[index - 1].focus();
+
+                if (key === 'ArrowDown' && index < rows.length - 1) {
+                    rows[index + 1].focus();
+                }
+                if (key === 'ArrowUp' && index > 0) {
+                    rows[index - 1].focus();
+                }
             }
-            if (key.toLowerCase() === 'q' || key.toLowerCase() === 'a') {
-                const quantityCell = row.querySelector('.quantity');
-                let quantity = parseInt(quantityCell.textContent, 10) || 0;
-                if (key === 'q') quantity += 1;
-                else if (key === 'a') quantity = Math.max(0, quantity - 1);
-                quantityCell.textContent = quantity;
+
+            if (key.toLowerCase() === 'd') {
+                const discountCheckbox = row.querySelector('.discount input[type="checkbox"]');
+                
+                discountCheckbox.checked = !discountCheckbox.checked;
                 updateRowAmount(row);
                 updateTotalAmount();
+                
                 event.preventDefault();
             }
-            if (key === 'Backspace') {
+
+            if (key.toLowerCase() === 'q') {
+    qtyInput.style.visibility = "visible";
+    bodyDiv.classList.add("blur");
+
+    qtyInputField.focus();
+
+    qtyInputField.addEventListener("keydown", function handleQtyInput(event) {
+        if (event.key === "Enter") {
+            const enteredQuantity = parseInt(qtyInputField.value, 10);
+
+            // Get the itemName from the encode-table's current row
+            const itemName = row.querySelector('.name').textContent.trim();
+
+            // Find the corresponding row in the select-table using itemName
+            const selectRow = Array.from(document.querySelectorAll('.select-table tbody tr'))
+                .find(selectRow => selectRow.querySelector('.select-description')?.textContent.trim() === itemName);
+
+            const maxAvailableQty = selectRow 
+                ? parseInt(selectRow.querySelector('.select-qty').textContent.trim(), 10) 
+                : 0;
+
+            if (!isNaN(enteredQuantity) && enteredQuantity > 0) {
+                const quantityCell = row.querySelector('.quantity');
+                const quantityTextNode = quantityCell.firstChild;
+
+                // Check if entered quantity exceeds available quantity
+                if (enteredQuantity > maxAvailableQty) {
+                    // Limit quantity to the maximum available
+                    const limitedQuantity = maxAvailableQty;
+
+                    if (quantityTextNode && quantityTextNode.nodeType === Node.TEXT_NODE) {
+                        quantityTextNode.textContent = limitedQuantity;
+                    } else {
+                        quantityCell.textContent = limitedQuantity;
+                    }
+
+                    const quantityInput = quantityCell.querySelector('input[type="hidden"]');
+                    quantityInput.value = limitedQuantity;
+
+                    // Display error message
+                    error.hidden = false;
+                    error.textContent = `Maximum available quantity is ${maxAvailableQty}`;
+                    error.style.opacity = 1;
+                    setTimeout(() => {
+                        error.style.opacity = 0;
+                    }, 5000);
+                } else {
+                    // Update quantity with entered value
+                    if (quantityTextNode && quantityTextNode.nodeType === Node.TEXT_NODE) {
+                        quantityTextNode.textContent = enteredQuantity;
+                    } else {
+                        quantityCell.textContent = enteredQuantity;
+                    }
+
+                    const quantityInput = quantityCell.querySelector('input[type="hidden"]');
+                    quantityInput.value = enteredQuantity;
+                }
+
+                updateRowAmount(row);
+                updateTotalAmount();
+            }
+
+            qtyInput.style.visibility = "hidden";
+            bodyDiv.classList.remove("blur");
+            qtyInputField.removeEventListener("keydown", handleQtyInput);
+            qtyInputField.value = ''; 
+
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    });
+}
+
+
+
+            if (key === 'F2') {
+                const previousRow = row.previousElementSibling;
+                const nextRow = row.nextElementSibling;
+
                 row.remove();
                 updateTotalAmount();
+
+                if (previousRow) {
+                    previousRow.focus();
+                } else if (nextRow) {
+                    nextRow.focus();
+                }
+
                 event.preventDefault();
             }
         }
 
-        discountInput.addEventListener("input", function () {
-            const rows = encodeTableBody.querySelectorAll('tr[row-num-data]');
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "F5") {
+                event.preventDefault();
+                event.stopPropagation();
+                const saveSaleButton = document.querySelector("#save-sale-button");
+                saveSaleButton.click();
+            }
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "F9") {
+                event.preventDefault(); 
+                location.reload(); 
+            }
+        });
+
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "F10") {
+                event.preventDefault(); 
+                window.location.href = "/home"; 
+            }
+        });
+
+        error.addEventListener("click", (event) => {
+            error.hidden = true;
+        });
+        
+        document.addEventListener("keydown", function(event) {
+            if (event.key === 'F4') { 
+                const remarksInputField = discountInput.querySelector('input[name="remarks-input"]');
+                
+                bodyDiv.classList.add("blur");
+                discountInput.style.visibility = "visible";
+                discountInputField.focus();
+
+                discountInputField.addEventListener("keydown", function handleDiscountEnter(event) {
+                    if (event.key === "Enter") {
+                        remarksInputField.focus();
+                        event.stopPropagation();
+
+                        remarksInputField.addEventListener("keydown", function handleRemarksEnter(event) {
+                            if (event.key === "Enter") {
+                                const discountDisplay = document.querySelector('.discount-display');
+                                const discountValue = discountInputField.value.trim() || "20"; 
+                                
+                                discountDisplay.textContent = `${discountValue}%`;
+                                document.querySelector('input[name="discount"]').value = `${discountValue}`;
+                                
+                                bodyDiv.classList.remove("blur");
+                                discountInput.style.visibility = "hidden";
+
+                                discountInputField.removeEventListener("keydown", handleDiscountEnter);
+                                remarksInputField.removeEventListener("keydown", handleRemarksEnter);
+
+                                event.stopPropagation();
+                            }
+                        });
+
+                        event.preventDefault(); 
+                    }
+                });
+
+                event.preventDefault(); 
+            }
+        });
+
+        discountInputField.addEventListener("input", function () {
+            discountInputField.value = discountInputField.value.replace(/\D/g, '').slice(0, 2);
+
+            if (discountInputField.value.startsWith('0')) {
+                discountInputField.value = discountInputField.value.slice(1);
+            }
+
+            const rows = encodeTableBody.querySelectorAll('tr.data');
             rows.forEach(row => updateRowAmount(row));
             updateTotalAmount();
         });
-        
+
         pluRows.forEach((row, index) => {
             row.setAttribute("tabindex", "0");
             row.addEventListener("focus", function () {
                 const priceCell = row.querySelector(".select-price");
                 if (priceCell) priceDisplay.textContent = "₱ " + priceCell.textContent;
+                lastFocusedRow = row;
+            });
+            row.addEventListener("focusout", (event) => {
+                if (!event.relatedTarget || !event.relatedTarget.closest('.select-table tbody tr')) {
+                    if (lastFocusedRow) {
+                        lastFocusedRow.focus();
+                    }
+                }
             });
             row.addEventListener("keydown", function (event) {
                 const key = event.key;
@@ -215,9 +536,10 @@
                     const newRow = addItemToEncodeTable(itemName, itemPrice, itemId);
 
                     newRow.focus();
+                    lastFocusedRow = newRow;
 
                     itemSelect.style.visibility = "hidden";
-                    tableContainer.style.filter = "none";
+                    bodyDiv.classList.remove("blur");
 
                     event.preventDefault();
                     event.stopPropagation();
@@ -249,27 +571,37 @@
         });
 
         document.addEventListener("keydown", function(event) {
+            const activeElement = document.activeElement;
+            const isQtyInputFocused = activeElement === qtyInputField;
             if (event.key === "Enter") {
                 itemSelect.style.visibility = "visible";
-                tableContainer.style.filter = "blur(3px)";
+                bodyDiv.classList.add("blur");
                 const firstPluRow = document.querySelector(".select-table tbody tr");
                 if (firstPluRow) firstPluRow.focus();
-            } else if (event.key === "Backspace") {
+            } else if (event.key === "Backspace" && !isQtyInputFocused) {
                 itemSelect.style.visibility = "hidden";
-                tableContainer.style.filter = "none";
-
+                bodyDiv.classList.remove("blur");
             }
         });
 
+        document.addEventListener("focusout", function () {
+            setTimeout(() => {
+                if (!document.activeElement || document.activeElement === document.body) {
+                    if (lastFocusedRow) lastFocusedRow.focus();
+                }
+            }, 0);
+        });
+
         document.querySelectorAll('.select-table tbody tr').forEach(row => {
-        row.addEventListener('focus', (event) => {
-            event.target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'nearest'
+            row.addEventListener('focus', (event) => {
+                event.target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                });
             });
         });
     });
-});
 </script>
+
 </html>
