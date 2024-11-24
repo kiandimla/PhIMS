@@ -38,10 +38,11 @@ button {
     border-radius: 6px;
     align-self: center;
     position: absolute;
-    top: 75%;
+    top: 18%;
     box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
-    transition: background-color 0.3s ease;
     user-select: none;
+    opacity: 0;
+    transition: opacity 0.5s ease; 
 } .error-message:hover {
     background-color: tomato;
 }

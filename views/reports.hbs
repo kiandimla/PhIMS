@@ -1,0 +1,238 @@
+<html>
+    <head>
+        <title>Reports</title>
+        <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/inventory.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/reports.css">
+        <script src="../scripts/table2excel.js"></script>
+    </head>
+    <body>
+        {{!-- Header --}}
+        <div class="header-div">
+            <img class="logo" src="../images/logo.png">
+            <div class="flex center">
+                <ul>
+                    <li><a class="header-divider"></a></li>
+                    <li><a class="header-button" href="/home">Home</a></li>
+                    <li><a class="header-divider">></a></li>
+                    <li><a class="header-button" href="/generate-reports">Generate Reports</a></li>
+                    <li><a class="header-divider">></a></li>
+                    <li><a class="header-button on-page">{{aggregate}} {{type}} Report</a></li>
+                </ul>
+            </div>
+            <div class="sign-out">
+                <div>
+                    <span>{{user}}</span> <br />
+                    <a class="sign-out-button" href="/">Sign Out</a>
+                </div>
+            </div>
+        </div>
+        <div class="body-div">
+            <div class="flex column container">
+                <div class="flex nav">
+                    {{!-- <span class="title-card">{{aggregate}} {{type}} Report</span> --}}
+                    {{#ifNot type "Stock Card"}}
+                    <div class="input-container">
+                        Sort by 
+                        <select id="sort">
+                            <option></option>
+                            {{#each columns}}
+                                <option>{{name}}</option>
+                            {{/each}}
+                        </select> 
+                    </div>
+                    <div class="input-container">
+                        Order
+                        <select id="order">
+                            <option></option>
+                            <option>Descending</option>
+                            <option>Ascending</option>
+                        </select> 
+                    </div>
+                    {{/ifNot}}
+                    <div class="input-container excel" id="excel-button">
+                        Export as .xlsx
+                    </div>
+                </div>
+                <div class="report-table-container">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th colspan="{{arrayLength columns}}" class="header">
+                                    <span class="bold tgp">The Generics Pharmacy</span>
+                                    <br />
+                                    <span class="normal">{{aggregate}} {{type}} Report</span>
+                                </th>
+                            </tr>
+                            {{#ifNot type "Item Aging"}}
+                            <tr>
+                                <th colspan="{{arrayLength columns}}" class="header">
+                                    Date Range: {{start}} - {{end}}
+                                </th>
+                            </tr>
+                            {{/ifNot}}
+                            {{#ifNot type "Stock Card"}}
+                            <tr>
+                                {{#each columns}}
+                                <th class="{{class}}">{{name}}</th>
+                                {{/each}}
+                            </tr>
+                            {{/ifNot}}
+                        </thead>
+                        <tbody>
+                            {{#if type "Stock Card"}}
+                                {{#each groupedResults}}
+                                    
+                                    <tr class="item-header key top-border">
+                                        <td colspan="3">{{@key}}</td>
+                                    </tr>
+                                    <tr class="item-header">
+                                        {{#each ../columns}}
+                                        <td class="{{class}}">{{name}}</td>
+                                        {{/each}}
+                                    </tr>
+                                    {{#each this}}
+                                    <tr tabindex="0" class="{{#isLast @index ../this}}no-bottom-border{{/isLast}}">
+                                        <td class="string">{{DateRange}}</td>
+                                        <td class="string">{{MovementType}}</td>
+                                        <td class="int">{{Quantity}}</td>
+                                    </tr>
+                                    {{/each}}
+                                {{/each}}
+                            {{/if}}
+
+                            {{#each results}}
+                                {{#if ../type "Sales"}} 
+                                <tr tabindex="0">
+                                    <td>{{DateRange}}</td>
+                                    <td class="int">{{TotalInvoices}}</td>
+                                    <td class="int">{{TotalQuantitySold}}</td>
+                                    <td class="number">{{GrossSales}}</td>
+                                    <td class="number">{{TotalDiscounts}}</td>
+                                    <td class="number bold">{{NetSales}}</td>
+                                </tr>
+                                {{/if}}
+
+                                {{#if ../type "Deliveries"}} 
+                                <tr tabindex="0">
+                                    <td>{{itemId}}</td>
+                                    <td>{{itemName}}</td>
+                                    <td class="int">{{TotalQuantity}}</td>
+                                    <td class="number bold">{{TotalCost}}</td>
+                                </tr>
+                                {{/if}}
+
+                                {{#if ../type "Item Performance"}} 
+                                <tr tabindex="0">
+                                    <td>{{itemId}}</td>
+                                    <td>{{itemName}}</td>
+                                    <td class="int">{{TotalQuantitySold}}</td>
+                                    <td class="number">{{GrossSales}}</td>
+                                    <td class="number">{{TotalDiscounts}}</td>
+                                    <td class="number bold">{{NetSales}}</td>
+                                </tr>
+                                {{/if}}
+
+                                {{#if ../type "Item Aging"}} 
+                                <tr tabindex="0">
+                                    <td>{{itemId}}</td>
+                                    <td>{{itemName}}</td>
+                                    <td class="int">{{totalQuantity}}</td>
+                                    <td class="number">{{avgInventoryAge}}</td>
+                                    <td class="int">{{aged1to30}}</td>
+                                    <td class="int">{{aged31to60}}</td>
+                                    <td class="int">{{aged61to90}}</td>
+                                    <td class="int ">{{agedOver91}}</td>
+                                    <td class="int">{{untrackedStock}}</td>
+                                </tr>
+                                {{/if}}
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </body>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const numberCells = document.querySelectorAll('td.number');
+        numberCells.forEach(cell => {
+            const value = cell.textContent.trim();
+
+            if (!isNaN(value) && value !== "") {
+                cell.textContent = Number(value).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        });
+
+        const excelButton = document.getElementById('excel-button');
+        excelButton.addEventListener('click', function() {
+            var table2excel = new Table2Excel();
+            table2excel.export(document.querySelectorAll(".report-table"));
+        });
+
+        const sortDropdown = document.getElementById('sort');
+        const orderDropdown = document.getElementById('order');
+        const tableBody = document.querySelector('.report-table tbody');
+
+        function disableDropdowns(disabled) {
+            sortDropdown.disabled = disabled;
+            orderDropdown.disabled = disabled;
+        }
+
+        function isDate(value) {
+            return value.includes('/');
+        }
+
+        function parseValue(value, cellClassList) {
+            if (cellClassList.contains('int') || cellClassList.contains('number')) {
+                return parseFloat(value.replace(/,/g, '')) || 0; 
+            }
+            if (isDate(value)) {
+                return new Date(value); 
+            }
+            return value.toLowerCase(); 
+        }
+
+        function sortTable(sortIndex, order) {
+            const rows = Array.from(tableBody.rows);
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[sortIndex];
+                const cellB = rowB.cells[sortIndex];
+
+                const valueA = parseValue(cellA.textContent.trim(), cellA.classList);
+                const valueB = parseValue(cellB.textContent.trim(), cellB.classList);
+
+                if (valueA < valueB) {
+                    return order === 'Ascending' ? -1 : 1;
+                }
+                if (valueA > valueB) {
+                    return order === 'Ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+
+            rows.forEach(row => tableBody.appendChild(row));
+
+            disableDropdowns(false);
+        }
+
+        function handleSort() {
+            const sortBy = sortDropdown.selectedIndex - 1; 
+            const order = orderDropdown.value;
+
+            if (sortBy >= 0 && order) {
+                disableDropdowns(true); 
+                sortTable(sortBy, order); 
+            }
+        }
+
+        sortDropdown.addEventListener('change', handleSort);
+        orderDropdown.addEventListener('change', handleSort);
+    });
+
+</script>
+</html>

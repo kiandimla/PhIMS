@@ -28,7 +28,7 @@
                 <span class="title-card">Generate Reports</span>
                 <div class="border flex center">
                     <form class="flex left column report-form" id="report-form" action="/reports" method="post">
-                        <div class="form-option flex column left">
+                        <div class="form-option flex column left type">
                             <span class="bold">Report Type: </span>
                             <select class="no-left-margin" name="report-type" id="report-type">
                                 <option></option>
@@ -40,15 +40,14 @@
                                 <option>Stock Card</option>
                             </select>
                         </div>
-                        <div class="form-option flex column left">
-                            <span class="bold">Report Summary: </span>
-                            
+                        <div class="form-option flex column left group">
+                            <span class="bold">Report Group: </span>
                             <select class="no-left-margin" name="report-aggregate" id="report-aggregate">
                                 <option></option>
-                                <option>Day</option>
-                                <option>Week</option>
-                                <option>Month</option>
-                                <option>Year</option>
+                                <option>Daily</option>
+                                <option>Weekly</option>
+                                <option>Monthly</option>
+                                <option>Yearly</option>
                             </select>
                         </div>
                         <div class="form-option flex column left">
@@ -71,68 +70,72 @@
             </div>
         </div>
     </body>
+<script>
+    const type = document.getElementById("report-type");
+    const aggregate = document.getElementById("report-aggregate");
+    const start = document.getElementById("report-start-date");
+    const end = document.getElementById("report-end-date");
+    const error = document.getElementById("error-message");
 
-    <script>
-        const type = document.getElementById("report-type");
-        const aggregate = document.getElementById("report-aggregate");
-        const start = document.getElementById("report-start-date");
-        const end = document.getElementById("report-end-date");
+    document.getElementById("report-type").addEventListener("change", function () {
+        const selectedOption = this.value;
+        const groupDiv = document.querySelector(".group");
+        const dateDiv = document.querySelector(".form-option:nth-child(3)"); 
+        const reportAggregate = document.getElementById("report-aggregate");
 
-        const elements = [type, aggregate, start, end];
-
-        const error = document.getElementById("error-message")
-
-        elements.forEach((element, index) => {
-            element.addEventListener("keydown", (event) => {
-                if (event.key === "Enter") {
-                    event.preventDefault();
-                    const nextIndex = (index + 1) % elements.length;
-                    elements[nextIndex].focus();
-                }
-            });
-
-            element.addEventListener("focus", () => {
-                lastFocusedElement = element;
-            });
-        });
-
-        document.addEventListener("focusout", (event) => {
-            setTimeout(() => {
-                if (!document.activeElement || !elements.includes(document.activeElement)) {
-                    lastFocusedElement.focus();
-                }
-            }, 0);
-        });
-
-        window.onload = () => {
-            elements[0].focus();
-        };
-
-        error.addEventListener("click", (event) => {
-            error.hidden = true;
-        });
-
-        function validateFields() {
-            const typeValue = type.value; 
-            const aggregateValue = aggregate.value; 
-            const startValue = start.value; 
-            const endValue = end.value; 
-
-            const error = document.getElementById("error-message")
-
-            if (!typeValue || !aggregateValue || !startValue || !endValue) {
-                error.textContent = "Please fill out all fields";
-                error.hidden = false;
-                return false; 
-            }
-
-            if (new Date(startValue) >= new Date(endValue)) {
-                error.textContent = "Start date must be before end date";
-                error.hidden = false;
-                return false; 
-            }
-
-            return true; 
+        if (selectedOption === "Item Aging") {
+            groupDiv.style.display = "none";
+            dateDiv.style.display = "none";
+            reportAggregate.selectedIndex = 0;
+        } else if (selectedOption === "Deliveries" || selectedOption === "Item Performance") {
+            groupDiv.style.display = "none";
+            dateDiv.style.display = "flex";
+            reportAggregate.selectedIndex = 0;
+        } else {
+            groupDiv.style.display = "flex";
+            dateDiv.style.display = "flex";
         }
-    </script>
+    });
+
+    function validateFields() {
+        const typeValue = type.value;
+        const aggregateValue = aggregate.value;
+        const startValue = start.value;
+        const endValue = end.value;
+
+        if (!typeValue) {
+            showError("Please select a report type");
+            return false;
+        }
+
+        if (typeValue !== "Item Aging" && typeValue !== "Deliveries" && typeValue !== "Item Performance" && !aggregateValue) {
+            showError("Please select a report group");
+            return false;
+        }
+
+        if (typeValue !== "Item Aging" && (!startValue || !endValue)) {
+            showError("Please select both start and end dates");
+            return false;
+        }
+
+        if (typeValue !== "Item Aging" && new Date(startValue) > new Date(endValue)) {
+            showError("Start date must be on or before end date");
+            return false;
+        }
+
+        return true;
+    }
+
+    function showError(message) {
+        error.textContent = message;
+        error.hidden = false;
+        error.style.opacity = 1;
+        setTimeout(() => {
+            error.style.opacity = 0;
+        }, 5000);
+    }
+</script>
+
+
+
 </html>

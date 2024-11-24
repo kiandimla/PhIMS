@@ -1,37 +1,4 @@
 @font-face {
-    font-family: "Graphik";
-    src: url("/stylesheets/fonts/GraphikRegular.otf") format("truetype");
-    font-weight: normal;
-}
-@font-face {
-    font-family: "Graphik";
-    src: url("/stylesheets/fonts/GraphikMedium.otf") format("truetype");
-    font-weight: bold;
-}
-
-@font-face {
-    font-family: "Real";
-    src: url("/stylesheets/fonts/Real\ Text\ Regular.otf") format("truetype");
-    font-weight: normal;
-}
-@font-face {
-    font-family: "Real";
-    src: url("/stylesheets/fonts/Real\ Text\ Medium.otf") format("truetype");
-    font-weight: bold;
-}
-
-@font-face {
-    font-family: "Poppins";
-    src: url("/stylesheets/fonts/Poppins-Medium.ttf") format("truetype");
-    font-weight: normal;
-}
-@font-face {
-    font-family: "Poppins";
-    src: url("/stylesheets/fonts/Poppins-Bold.ttf") format("truetype");
-    font-weight: bold;
-}
-
-@font-face {
     font-family: "SF";
     src: url("/stylesheets/fonts/SFPRODISPLAYREGULAR.OTF") format("truetype");
     font-weight: normal;
@@ -199,4 +166,7 @@ li a {
 } .sign-out-button:hover {
     color: red;
     text-decoration: none;
+}
+.light {
+    font-weight: normal;
 }

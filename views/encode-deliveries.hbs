@@ -4,7 +4,7 @@
         <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/encode.css">
     </head>
-    <body>
+    <body delivery-saved-data="{{ deliverySaved }}">
         {{!-- Header --}}
         <div class="header-div">
             <img class="logo" src="../images/logo.png">
@@ -171,7 +171,7 @@
         // Check if there are no items in the sale
         if (dataRows.length === 0) {
             error.hidden = false;
-            error.textContent = "Sale has no items"; 
+            error.textContent = "Delivery has no items"; 
             error.style.opacity = 1;
             setTimeout(() => {
                 error.style.opacity = 0;
@@ -222,13 +222,12 @@
             error.style.opacity = 1;
             setTimeout(() => {
                 error.style.opacity = 0;
-            }, 5000);
+            }, 3000);
             return false;
         }
 
         return true;
     }
-
 
     document.addEventListener("DOMContentLoaded", function () {
         const bodyDiv = document.querySelector('.body-div');
@@ -249,6 +248,16 @@
         const purposeInputField = document.getElementById("purpose-input-field");
         const remarksInputField = document.getElementById("remarks-input-field");
 
+        const deliverySavedData = document.body.getAttribute("delivery-saved-data");
+
+        if (deliverySavedData === "0") {
+            error.hidden = false;
+            error.textContent = "Invalid delivery remarks";
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 3000);
+        }
         
         let searchBuffer = "";
         let searchTimeout;
@@ -493,7 +502,7 @@
         }
 
         qtyInputField.addEventListener("input", function () {
-            qtyInputField.value = qtyInputField.value.replace(/\D/g, '').slice(0, 2);
+            qtyInputField.value = qtyInputField.value.replace(/\D/g, '').slice(0, 4);
 
             if (qtyInputField.value.startsWith('0')) {
                 qtyInputField.value = qtyInputField.value.slice(1);

@@ -1,0 +1,110 @@
+.inventory-table {
+    top: 0%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    /* border-radius: 5px; */
+    /* overflow: hidden; */
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+    color: #1F2F34;
+    min-width: 100%;
+} 
+.inventory-table thead tr {
+    font-size: large;
+    font-weight: normal;
+    background-color: #F1F7F9;
+    text-align: left;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+.inventory-table th, .inventory-table td {
+    padding: 18px;
+}
+.inventory-table th.amount, .inventory-table td.amount {
+    padding-right: 40px;
+}
+.inventory-table tbody td {
+    padding: 10px;
+}
+.inventory-table tbody tr {
+    font-size: large;
+    border-bottom: 2px solid #EBEFF2;
+}
+.inventory-table tbody tr:last-of-type {
+    border-bottom: 0;
+}
+tbody tr:hover {
+    outline: 0px; 
+    background-color: #fffdee;
+}
+tbody tr:focus {
+    outline: 0px; 
+    background-color: #FDF7C1;
+}
+.inventory-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+
+.table-container {
+    position: relative;
+    max-height: 410px;
+    border-radius: 5px;
+    overflow-y: auto;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+}
+
+
+.container {
+    position: absolute;
+    top: 15%;
+}
+
+.number, .int {
+    text-align: right;
+}
+.string {
+    text-align: left;
+}
+
+.item-name {
+    min-width: 385px;
+}
+
+.input-container input {
+    width: 130px;
+}
+.input-container input:focus {
+    background-color: #ffdcd7;
+}
+.input-container {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
+    border: 1px solid var(--border);
+    background-color: white;
+    font-weight: bold;
+    margin-right: 20px;
+}
+
+.title-card {
+    margin: 0;
+    margin-right: 15px;
+}
+
+.nav {
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+select {
+    margin-left: 5px;
+}
+
+#search {
+    width: 250px;
+}

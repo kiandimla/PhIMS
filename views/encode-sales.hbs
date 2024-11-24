@@ -35,6 +35,7 @@
                         <div class="si-container">
                            Discount: <span class="discount-display"> 20%</span>
                            <input name="discount" type="hidden" />
+                           <input name="remarks" type="hidden" />
                         </div>
                     </div>
                     
@@ -106,9 +107,6 @@
         const remarksInputField = document.querySelector('input[name="remarks-input"]');
         const saleIdInput = document.querySelector('input[name="saleId"]');
         const error = document.getElementById("error-message");
-        const discountInput = document.getElementById("discount-input");
-        const discountInputField = discountInput.querySelector('input[name="discount-input"]');
-        const allDiscountsOff = Array.from(discountCheckboxes).every(checkbox => !checkbox.checked);
         const dataRows = document.querySelectorAll('.encode-table tbody tr.data');
 
         if (dataRows.length === 0) {
@@ -119,11 +117,6 @@
                 error.style.opacity = 0;
             }, 5000);
             return false;
-        }
-
-        if (allDiscountsOff) {
-            remarksInputField.value = '';
-            document.querySelector('input[name="discount"]').value = '';
         }
 
         if (saleIdInput.value.trim() === "") {
@@ -151,6 +144,7 @@
         const qtyInputField = qtyInput.querySelector('input[name="qty-input"]');
         const discountInput = document.getElementById("discount-input");
         const discountInputField = discountInput.querySelector('input[name="discount-input"]');
+        const remarksInputField = discountInput.querySelector('input[name="remarks-input"]');
 
         const saleIdInput = document.querySelector('input[name="saleId"]');
         const error = document.getElementById("error-message");
@@ -159,10 +153,77 @@
         let searchTimeout;
         let lastFocusedRow = null; 
 
+let barcodeBuffer = "";
+let barcodeTimeout;
+
         itemSelect.style.visibility = "hidden";
         qtyInput.style.visibility = "hidden";
         discountInput.style.visibility = "hidden";
         saleIdInput.focus();
+
+document.addEventListener("keydown", function (event) {
+    // Reset buffer on "Backspace" or "Escape"
+    if (event.key === "Escape") {
+        barcodeBuffer = "";
+        itemSelect.style.visibility = "hidden";
+        bodyDiv.classList.remove("blur");
+        return;
+    }
+
+    // Capture input
+    if (event.key.length === 1) {
+        barcodeBuffer += event.key;
+        if (barcodeTimeout) clearTimeout(barcodeTimeout);
+
+        barcodeTimeout = setTimeout(() => {
+            if (barcodeBuffer.length > 3) { // Typical barcode length
+                handleBarcodeInput(barcodeBuffer);
+            }
+            barcodeBuffer = "";
+        }, 5); // Detect fast input
+    }
+
+    // Handle "Enter" key for manual barcode entry
+    if (event.key === "Enter" && barcodeBuffer.length > 0) {
+        handleBarcodeInput(barcodeBuffer);
+        barcodeBuffer = "";
+    }
+});
+
+function handleBarcodeInput(barcode) {
+    const matchedRow = Array.from(pluRows).find(row => {
+        const codeCell = row.querySelector(".select-code");
+        return codeCell && codeCell.textContent.trim() === barcode.trim();
+    });
+
+    if (matchedRow) {
+        const itemName = matchedRow.querySelector(".select-description").textContent;
+        const itemPrice = matchedRow.querySelector(".select-price").textContent;
+        const itemId = matchedRow.querySelector(".select-code").textContent;
+
+        addItemToEncodeTable(itemName, itemPrice, itemId);
+
+        itemSelect.style.visibility = "hidden";
+        bodyDiv.classList.remove("blur");
+    } else {
+        console.error(`Item with barcode ${barcode} not found.`);
+        showError(`Item with barcode ${barcode} not found.`);
+    }
+}
+
+function showError(message) {
+    const error = document.getElementById("error-message");
+    error.textContent = message;
+    error.hidden = false;
+    error.style.opacity = 1;
+    setTimeout(() => {
+        error.style.opacity = 0;
+    }, 5000);
+}
+
+        saleIdInput.addEventListener("input", function () {
+            saleIdInput.value = saleIdInput.value.replace(/[^0-9]/g, '');
+        });
 
         function getDiscountRate() {
             const discountValue = parseFloat(discountInputField.value) || parseFloat(discountInputField.placeholder);
@@ -337,79 +398,71 @@
             }
 
             if (key.toLowerCase() === 'q') {
-    qtyInput.style.visibility = "visible";
-    bodyDiv.classList.add("blur");
+                qtyInput.style.visibility = "visible";
+                bodyDiv.classList.add("blur");
 
-    qtyInputField.focus();
+                qtyInputField.focus();
 
-    qtyInputField.addEventListener("keydown", function handleQtyInput(event) {
-        if (event.key === "Enter") {
-            const enteredQuantity = parseInt(qtyInputField.value, 10);
+                qtyInputField.addEventListener("keydown", function handleQtyInput(event) {
+                    if (event.key === "Enter") {
+                        const enteredQuantity = parseInt(qtyInputField.value, 10);
 
-            // Get the itemName from the encode-table's current row
-            const itemName = row.querySelector('.name').textContent.trim();
+                        const itemName = row.querySelector('.name').textContent.trim();
 
-            // Find the corresponding row in the select-table using itemName
-            const selectRow = Array.from(document.querySelectorAll('.select-table tbody tr'))
-                .find(selectRow => selectRow.querySelector('.select-description')?.textContent.trim() === itemName);
+                        const selectRow = Array.from(document.querySelectorAll('.select-table tbody tr'))
+                            .find(selectRow => selectRow.querySelector('.select-description')?.textContent.trim() === itemName);
 
-            const maxAvailableQty = selectRow 
-                ? parseInt(selectRow.querySelector('.select-qty').textContent.trim(), 10) 
-                : 0;
+                        const maxAvailableQty = selectRow 
+                            ? parseInt(selectRow.querySelector('.select-qty').textContent.trim(), 10) 
+                            : 0;
 
-            if (!isNaN(enteredQuantity) && enteredQuantity > 0) {
-                const quantityCell = row.querySelector('.quantity');
-                const quantityTextNode = quantityCell.firstChild;
+                        if (!isNaN(enteredQuantity) && enteredQuantity > 0) {
+                            const quantityCell = row.querySelector('.quantity');
+                            const quantityTextNode = quantityCell.firstChild;
 
-                // Check if entered quantity exceeds available quantity
-                if (enteredQuantity > maxAvailableQty) {
-                    // Limit quantity to the maximum available
-                    const limitedQuantity = maxAvailableQty;
+                            if (enteredQuantity > maxAvailableQty) {
+                                const limitedQuantity = maxAvailableQty;
 
-                    if (quantityTextNode && quantityTextNode.nodeType === Node.TEXT_NODE) {
-                        quantityTextNode.textContent = limitedQuantity;
-                    } else {
-                        quantityCell.textContent = limitedQuantity;
+                                if (quantityTextNode && quantityTextNode.nodeType === Node.TEXT_NODE) {
+                                    quantityTextNode.textContent = limitedQuantity;
+                                } else {
+                                    quantityCell.textContent = limitedQuantity;
+                                }
+
+                                const quantityInput = quantityCell.querySelector('input[type="hidden"]');
+                                quantityInput.value = limitedQuantity;
+
+                                error.hidden = false;
+                                error.textContent = `Maximum available quantity is ${maxAvailableQty}`;
+                                error.style.opacity = 1;
+                                setTimeout(() => {
+                                    error.style.opacity = 0;
+                                }, 5000);
+                            } else {
+                                if (quantityTextNode && quantityTextNode.nodeType === Node.TEXT_NODE) {
+                                    quantityTextNode.textContent = enteredQuantity;
+                                } else {
+                                    quantityCell.textContent = enteredQuantity;
+                                }
+
+                                const quantityInput = quantityCell.querySelector('input[type="hidden"]');
+                                quantityInput.value = enteredQuantity;
+                            }
+
+                            updateRowAmount(row);
+                            updateTotalAmount();
+                        }
+
+                        qtyInput.style.visibility = "hidden";
+                        bodyDiv.classList.remove("blur");
+                        qtyInputField.removeEventListener("keydown", handleQtyInput);
+                        qtyInputField.value = ''; 
+
+                        event.preventDefault();
+                        event.stopPropagation();
                     }
-
-                    const quantityInput = quantityCell.querySelector('input[type="hidden"]');
-                    quantityInput.value = limitedQuantity;
-
-                    // Display error message
-                    error.hidden = false;
-                    error.textContent = `Maximum available quantity is ${maxAvailableQty}`;
-                    error.style.opacity = 1;
-                    setTimeout(() => {
-                        error.style.opacity = 0;
-                    }, 5000);
-                } else {
-                    // Update quantity with entered value
-                    if (quantityTextNode && quantityTextNode.nodeType === Node.TEXT_NODE) {
-                        quantityTextNode.textContent = enteredQuantity;
-                    } else {
-                        quantityCell.textContent = enteredQuantity;
-                    }
-
-                    const quantityInput = quantityCell.querySelector('input[type="hidden"]');
-                    quantityInput.value = enteredQuantity;
-                }
-
-                updateRowAmount(row);
-                updateTotalAmount();
+                });
             }
-
-            qtyInput.style.visibility = "hidden";
-            bodyDiv.classList.remove("blur");
-            qtyInputField.removeEventListener("keydown", handleQtyInput);
-            qtyInputField.value = ''; 
-
-            event.preventDefault();
-            event.stopPropagation();
-        }
-    });
-}
-
-
 
             if (key === 'F2') {
                 const previousRow = row.previousElementSibling;
@@ -456,9 +509,7 @@
         });
         
         document.addEventListener("keydown", function(event) {
-            if (event.key === 'F4') { 
-                const remarksInputField = discountInput.querySelector('input[name="remarks-input"]');
-                
+            if (event.key === 'F4' && itemSelect.style.visibility === "hidden") { 
                 bodyDiv.classList.add("blur");
                 discountInput.style.visibility = "visible";
                 discountInputField.focus();
@@ -466,16 +517,19 @@
                 discountInputField.addEventListener("keydown", function handleDiscountEnter(event) {
                     if (event.key === "Enter") {
                         remarksInputField.focus();
-                        event.stopPropagation();
 
                         remarksInputField.addEventListener("keydown", function handleRemarksEnter(event) {
                             if (event.key === "Enter") {
                                 const discountDisplay = document.querySelector('.discount-display');
-                                const discountValue = discountInputField.value.trim() || "20"; 
-                                
+                                const discountValue = discountInputField.value.trim() || "20";
+
                                 discountDisplay.textContent = `${discountValue}%`;
                                 document.querySelector('input[name="discount"]').value = `${discountValue}`;
-                                
+
+                                const remarksHiddenField = document.querySelector('input[name="remarks"]');
+                                const remarksValue = remarksInputField.value.trim();
+                                remarksHiddenField.value = remarksValue;
+
                                 bodyDiv.classList.remove("blur");
                                 discountInput.style.visibility = "hidden";
 
@@ -483,10 +537,12 @@
                                 remarksInputField.removeEventListener("keydown", handleRemarksEnter);
 
                                 event.stopPropagation();
+                                event.preventDefault();
                             }
                         });
 
-                        event.preventDefault(); 
+                        event.stopPropagation();
+                        event.preventDefault();
                     }
                 });
 
@@ -555,30 +611,53 @@
                         return str.replace(/[^a-zA-Z0-9]/g, "");
                     }
 
+                    let found = false;
+
                     for (let i = 0; i < pluRows.length; i++) {
                         const descriptionCell = pluRows[i].querySelector(".select-description");
                         if (descriptionCell) {
                             const cleanDescription = removeSpecialCharacters(descriptionCell.textContent.toLowerCase());
                             const cleanSearchBuffer = removeSpecialCharacters(searchBuffer);
+
                             if (cleanDescription.startsWith(cleanSearchBuffer)) {
                                 pluRows[i].focus();
+                                found = true;
                                 break;
                             }
                         }
                     }
+
+                    if (!found) {
+                        for (let i = 0; i < pluRows.length; i++) {
+                            const descriptionCell = pluRows[i].querySelector(".select-description");
+                            if (descriptionCell) {
+                                const cleanDescription = removeSpecialCharacters(descriptionCell.textContent.toLowerCase());
+                                const cleanSearchBuffer = removeSpecialCharacters(searchBuffer);
+
+                                if (cleanDescription.includes(cleanSearchBuffer)) {
+                                    pluRows[i].focus();
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
+
             });
         });
 
         document.addEventListener("keydown", function(event) {
             const activeElement = document.activeElement;
             const isQtyInputFocused = activeElement === qtyInputField;
+            const isDiscountInputFocused = activeElement === discountInputField;
+            const isRemarksInputFocused = activeElement === remarksInputField;
+
             if (event.key === "Enter") {
                 itemSelect.style.visibility = "visible";
                 bodyDiv.classList.add("blur");
                 const firstPluRow = document.querySelector(".select-table tbody tr");
                 if (firstPluRow) firstPluRow.focus();
-            } else if (event.key === "Backspace" && !isQtyInputFocused) {
+            } else if (event.key === "Backspace" && !isQtyInputFocused && !isDiscountInputFocused && !isRemarksInputFocused) {
                 itemSelect.style.visibility = "hidden";
                 bodyDiv.classList.remove("blur");
             }

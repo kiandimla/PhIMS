@@ -1,0 +1,159 @@
+<html>
+    <head>
+        <title>Inventory</title>
+        <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/inventory.css">
+    </head>
+    <body>
+        {{!-- Header --}}
+        <div class="header-div">
+            <img class="logo" src="../images/logo.png">
+            <div class="flex center">
+                <ul>
+                    <li><a class="header-divider"></a></li>
+                    <li><a class="header-button" href="/home">Home</a></li>
+                    <li><a class="header-divider">></a></li>
+                    <li><a class="header-button on-page">Inventory</a></li>
+                </ul>
+            </div>
+            <div class="sign-out">
+                <div>
+                    <span>{{ user }}</span> <br />
+                    <a class="sign-out-button" href="/">Sign Out</a>
+                </div>
+            </div>
+        </div>
+        <div class="body-div">
+            <div class="flex column container">
+                <div class="flex nav">
+                    <span class="title-card">Inventory</span>
+                    <div class="input-container">
+                        Sort By
+                        <select id="sort">
+                            <option></option>
+                            <option>Item Name</option>
+                            <option>Quantity</option>
+                            <option>Price</option>
+                            <option>Cost</option>
+                            <option>Markup</option>
+                            <option>Markup Percent</option>
+                        </select> 
+                    </div>
+                    <div class="input-container">
+                        Order
+                        <select id="order">
+                            <option></option>
+                            <option>Descending</option>
+                            <option>Ascending</option>
+                        </select> 
+                    </div>
+                    <div class="input-container">
+                        <input id="search" name="search" type="text">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>Item Code</th>
+                                <th class="item-name">Item Name</th>
+                                <th class="number">Quantity</th>
+                                <th class="number">Price</th>
+                                <th class="number">Cost</th>
+                                <th class="number">Markup</th>
+                                <th class="number">Markup Percent</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each inventory}}
+                            <tr tabindex="0">
+                                <td>{{ itemId }}</td>
+                                <td class="item-name">{{ itemName }}</td>
+                                <td class="number">{{ quantity }}</td>
+                                <td class="number">{{ price }}</td>
+                                <td class="number">{{ cost }}</td>
+                                <td class="number">{{ markup }}</td>
+                                <td class="number">{{ markupPercent }}%</td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </body>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const sortDropdown = document.getElementById("sort");
+        const orderDropdown = document.getElementById("order");
+        const searchInput = document.getElementById("search");
+        const tableBody = document.querySelector(".inventory-table tbody");
+        const columnMap = {
+            "Item Name": 1,
+            "Quantity": 2,
+            "Price": 3,
+            "Cost": 4,
+            "Markup": 5,
+            "Markup Percent": 6,
+        };
+
+        function disableDropdowns(disabled) {
+            sortDropdown.disabled = disabled;
+            orderDropdown.disabled = disabled;
+        }
+
+        function parseValue(value, isNumber) {
+            if (isNumber) {
+                return parseFloat(value.replace(/,/g, '').replace('%', '')) || 0;
+            }
+            return value.toLowerCase(); 
+        }
+
+        function sortTable(columnIndex, isNumber, isAscending) {
+            const rows = Array.from(tableBody.rows);
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[columnIndex].textContent.trim();
+                const cellB = rowB.cells[columnIndex].textContent.trim();
+
+                const valueA = parseValue(cellA, isNumber);
+                const valueB = parseValue(cellB, isNumber);
+
+                if (valueA < valueB) return isAscending ? -1 : 1;
+                if (valueA > valueB) return isAscending ? 1 : -1;
+                return 0;
+            });
+
+            rows.forEach(row => tableBody.appendChild(row));
+            disableDropdowns(false); // Re-enable dropdowns after sorting
+        }
+
+        function handleSort() {
+            const selectedColumn = sortDropdown.value;
+            const columnIndex = columnMap[selectedColumn];
+            const isNumber = ["Quantity", "Price", "Cost", "Markup", "Markup Percent"].includes(selectedColumn);
+            const isAscending = orderDropdown.value === "Ascending";
+
+            if (columnIndex !== undefined) {
+                disableDropdowns(true); 
+                setTimeout(() => sortTable(columnIndex, isNumber, isAscending), 0); 
+            }
+        }
+
+        function handleSearch() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const rows = Array.from(tableBody.rows);
+
+            rows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                row.style.display = rowText.includes(searchTerm) ? "" : "none";
+            });
+        }
+
+        sortDropdown.addEventListener("change", handleSort);
+        orderDropdown.addEventListener("change", handleSort);
+        searchInput.addEventListener("input", handleSearch);
+    });
+</script>
+
+</html>
