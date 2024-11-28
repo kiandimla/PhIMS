@@ -3,6 +3,7 @@
         <title>Encode Sales</title>
         <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/encode.css">
+        <link rel="icon" type="image/x-icon" href="/images/favicon.png">
     </head>
     <body>
         {{!-- Header --}}
@@ -18,7 +19,7 @@
             </div>
             <div class="sign-out">
                 <div>
-                    <span>{{ user }}</span> <br />
+                    <span>{{user.name}}</span> <br />
                     <a class="sign-out-button" href="/">Sign Out</a>
                 </div>
             </div>
@@ -30,7 +31,7 @@
                     <button id="save-sale-button" onclick="return validateFields()" type="submit" hidden></button>
                     <div class="flex">
                         <div class="si-container">
-                            SI <input name="saleId" type="text" placeholder="SI Number" value="{{ lastSaleSi }}" /> 
+                            SI <input name="saleId" type="text" placeholder="SI Number" value="{{lastSaleSi}}" /> 
                         </div>
                         <div class="si-container">
                            Discount: <span class="discount-display"> 20%</span>
@@ -80,10 +81,10 @@
                     <tbody>
                         {{#each inventory}}
                             <tr>
-                                <td class="select-description">{{ itemName }}</td>
-                                <td class="select-price">{{ price }}</td>
-                                <td class="select-code">{{ itemId }}</td>
-                                <td class="select-qty" hidden>{{ quantity }}</td>
+                                <td class="select-description">{{itemName}}</td>
+                                <td class="select-price">{{price}}</td>
+                                <td class="select-code">{{itemId}}</td>
+                                <td class="select-qty" hidden>{{quantity}}</td>
                             </tr>
                         {{/each}}
                     </tbody>
@@ -153,40 +154,35 @@
         let searchTimeout;
         let lastFocusedRow = null; 
 
-let barcodeBuffer = "";
-let barcodeTimeout;
-
         itemSelect.style.visibility = "hidden";
         qtyInput.style.visibility = "hidden";
         discountInput.style.visibility = "hidden";
         saleIdInput.focus();
 
+let barcodeBuffer = "";
+let lastKeyTime = Date.now();
+
 document.addEventListener("keydown", function (event) {
-    // Reset buffer on "Backspace" or "Escape"
-    if (event.key === "Escape") {
+    const currentTime = Date.now();
+    const timeDifference = currentTime - lastKeyTime;
+
+    if (timeDifference > 15) {
         barcodeBuffer = "";
-        itemSelect.style.visibility = "hidden";
-        bodyDiv.classList.remove("blur");
-        return;
     }
 
-    // Capture input
-    if (event.key.length === 1) {
+    lastKeyTime = currentTime;
+
+    if (event.key.length === 1) { 
         barcodeBuffer += event.key;
-        if (barcodeTimeout) clearTimeout(barcodeTimeout);
-
-        barcodeTimeout = setTimeout(() => {
-            if (barcodeBuffer.length > 3) { // Typical barcode length
-                handleBarcodeInput(barcodeBuffer);
-            }
+    } else if (event.key === "Enter") {
+        if (barcodeBuffer.length > 0) { 
+            event.preventDefault(); 
+            const barcode = barcodeBuffer; 
+            handleBarcodeInput(barcode); 
             barcodeBuffer = "";
-        }, 5); // Detect fast input
-    }
-
-    // Handle "Enter" key for manual barcode entry
-    if (event.key === "Enter" && barcodeBuffer.length > 0) {
-        handleBarcodeInput(barcodeBuffer);
-        barcodeBuffer = "";
+        } else {
+            return;
+        }
     }
 });
 
@@ -201,25 +197,33 @@ function handleBarcodeInput(barcode) {
         const itemPrice = matchedRow.querySelector(".select-price").textContent;
         const itemId = matchedRow.querySelector(".select-code").textContent;
 
-        addItemToEncodeTable(itemName, itemPrice, itemId);
-
-        itemSelect.style.visibility = "hidden";
-        bodyDiv.classList.remove("blur");
+        const newRow = addItemToEncodeTable(itemName, itemPrice, itemId);
+        setTimeout(() => {
+            itemSelect.style.visibility = "hidden";
+            bodyDiv.classList.remove("blur");
+            newRow.focus();
+            lastFocusedRow = newRow;            
+        }, 10);
+        
     } else {
-        console.error(`Item with barcode ${barcode} not found.`);
+        setTimeout(() => {
+            itemSelect.style.visibility = "hidden";
+            bodyDiv.classList.remove("blur");
+        }, 10);
+        
         showError(`Item with barcode ${barcode} not found.`);
     }
 }
 
-function showError(message) {
-    const error = document.getElementById("error-message");
-    error.textContent = message;
-    error.hidden = false;
-    error.style.opacity = 1;
-    setTimeout(() => {
-        error.style.opacity = 0;
-    }, 5000);
-}
+        function showError(message) {
+            const error = document.getElementById("error-message");
+            error.textContent = message;
+            error.hidden = false;
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 5000);
+        }
 
         saleIdInput.addEventListener("input", function () {
             saleIdInput.value = saleIdInput.value.replace(/[^0-9]/g, '');

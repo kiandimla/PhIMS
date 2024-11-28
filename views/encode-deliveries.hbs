@@ -3,8 +3,9 @@
         <title>Encode Deliveries</title>
         <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/encode.css">
+        <link rel="icon" type="image/x-icon" href="/images/favicon.png">
     </head>
-    <body delivery-saved-data="{{ deliverySaved }}">
+    <body delivery-saved-data="{{deliverySaved}}">
         {{!-- Header --}}
         <div class="header-div">
             <img class="logo" src="../images/logo.png">
@@ -18,7 +19,7 @@
             </div>
             <div class="sign-out">
                 <div>
-                    <span>{{ user }}</span> <br />
+                    <span>{{user.name}}</span> <br />
                     <a class="sign-out-button" href="/">Sign Out</a>
                 </div>
             </div>
@@ -38,7 +39,7 @@
                         </div>
 
                         <div class="si-container">
-                            <input id="remarks-input-field" name="remarks" type="text" placeholder="Remarks" value="{{ remarksString }}" /> 
+                            <input id="remarks-input-field" name="remarks" type="text" placeholder="Remarks" value="{{remarksString}}" /> 
                         </div>
                     </div>
                     
@@ -83,10 +84,10 @@
                     <tbody>
                         {{#each plu}}
                             <tr tabindex="0">
-                                <td class="select-description">{{ itemName }}</td>
-                                <td class="select-cost">{{ cost }}</td>
-                                <td class="select-code">{{ itemId }}</td>
-                                <td class="select-isPerishable" hidden>{{ isPerishable }}</td>
+                                <td class="select-description">{{itemName}}</td>
+                                <td class="select-cost">{{cost}}</td>
+                                <td class="select-code">{{itemId}}</td>
+                                <td class="select-isPerishable" hidden>{{isPerishable}}</td>
                             </tr>
                         {{/each}}
                     </tbody>

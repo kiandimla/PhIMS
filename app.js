@@ -79,6 +79,79 @@ function initializePLU() {
 
 initializePLU();
 
+app.get('/users', async function(req, res) {
+    if (!user) return res.redirect('/');
+    try {
+        const query = `
+            SELECT name, isAdmin FROM users;
+        `;
+
+        connection.query(query, (err, results) => {
+            if (err) {
+                console.error('Error fetching data from joined PLU and inventory tables:', err);
+                return;
+            }
+            const users = results;
+            res.render('users', { user, users });
+        });
+    } catch (error) {
+        console.error('Unexpected error:', error);
+    }
+});
+
+app.get('/ooq', async function(req, res) {
+    if (!user) return res.redirect('/');
+    try {
+        const sql = `
+            SELECT 
+                s.itemId,
+                s.itemName,
+                ROUND((SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7), 2) AS AvgWeeklyDemand,
+                ROUND(i.quantity / (SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7), 2) AS WOS,
+                ROUND((SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7) * 0.15, 2) AS SafetyStock,
+                i.quantity AS CurrentStock,
+                ROUND((SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7) + 
+                    (SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7) * 0.2 - 
+                    i.quantity, 0) AS OptimalOrderQuantity
+            FROM 
+                sales s
+            JOIN 
+                inventory i ON s.itemId = i.itemId
+            WHERE 
+                STR_TO_DATE(s.date, '%m/%d/%Y') BETWEEN DATE_SUB(CURDATE(), INTERVAL 1 YEAR) AND CURDATE()
+            GROUP BY 
+                s.itemId, s.itemName, i.quantity
+            ORDER BY 
+                OptimalOrderQuantity DESC;
+        `;
+
+        connection.query(sql, (err, results) => {
+            if (err) {
+                console.error('Error executing Item Performance query:', error);
+                return res.status(500).send('Error generating item performance report');
+            }
+
+            const columns = [
+                { name: 'Item ID', class: 'string' },
+                { name: 'Item Name', class: 'string' },
+                { name: 'Weekly Demand', class: 'number' },
+                { name: 'WOS', class: 'number' },
+                { name: 'Safety Stock', class: 'int' },
+                { name: 'Current Stock', class: 'int' },
+                { name: 'Optimal Order Quantity', class: 'int' },
+            ];
+
+            console.log('OOQ Results:', results);
+
+            res.render('ooq', { user, results, columns });
+        });
+
+    } catch (error) {
+        res.redirect('/home');
+        console.error('Unexpected error:', error);
+    }
+});
+
 app.get('/inventory', async function(req, res) {
     if (!user) return res.redirect('/');
     try {
@@ -208,6 +281,84 @@ app.post('/reports', async function (req, res) {
 
                 res.render('reports', { user, results, aggregate, type, start, end, columns });
             });
+        } else if (type === 'Profit') {
+            let groupByClause, selectAdditionalField, dateFormat;
+
+switch (aggregate) {
+    case 'Daily':
+        groupByClause = "`sales`.`date`";
+        selectAdditionalField = "`sales`.`date` AS `DateRange`";
+        dateFormat = "`sales`.`date`";
+        break;
+    case 'Weekly':
+        groupByClause = "YEAR(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y')), WEEK(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'))";
+        selectAdditionalField = `
+            CONCAT(
+                DATE_FORMAT(MIN(STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y')), '%m/%d/%Y'),
+                ' - ',
+                DATE_FORMAT(MAX(STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y')), '%m/%d/%Y')
+            ) AS \`DateRange\``;
+        dateFormat = "MIN(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'))";
+        break;
+    case 'Monthly':
+        groupByClause = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%m/%Y')";
+        selectAdditionalField = `
+            DATE_FORMAT(STR_TO_DATE(\`sales\`.\`date\`, '%m/%Y')) AS \`DateRange\``;
+        dateFormat = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%m/%Y')";
+        break;
+    case 'Yearly':
+        groupByClause = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%Y')";
+        selectAdditionalField = `
+            DATE_FORMAT(STR_TO_DATE(\`sales\`.\`date\`, '%Y')) AS \`DateRange\``;
+        dateFormat = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%Y')";
+        break;
+    default:
+        return res.status(400).send('Unsupported aggregation type');
+}
+
+const sql = `
+    SELECT 
+        ${selectAdditionalField},
+        COUNT(DISTINCT \`sales\`.\`invoiceNum\`) AS \`TotalInvoices\`,
+        SUM(\`sales\`.\`quantity\`) AS \`TotalQuantitySold\`,
+        ROUND(SUM(\`sales\`.\`quantity\` * \`PLU\`.\`cost\`), 2) AS \`TotalCost\`,
+        ROUND(SUM(DISTINCT \`sales\`.\`saleTotal\`) + SUM((\`sales\`.\`price\` * \`sales\`.\`quantity\`) * (\`sales\`.\`discountPercent\` / 100)), 2) AS \`GrossSales\`,
+        ROUND(SUM((\`sales\`.\`price\` * \`sales\`.\`quantity\`) * (\`sales\`.\`discountPercent\` / 100)), 2) AS \`TotalDiscounts\`,
+        ROUND(SUM(DISTINCT \`sales\`.\`saleTotal\`) - 
+            (SUM((\`sales\`.\`price\` * \`sales\`.\`quantity\`) * (\`sales\`.\`discountPercent\` / 100)) + SUM(\`sales\`.\`quantity\` * \`PLU\`.\`cost\`)), 2) AS \`GrossProfit\`
+    FROM 
+        \`PhIMS\`.\`sales\`
+    JOIN 
+        \`PhIMS\`.\`PLU\` ON \`sales\`.\`itemId\` = \`PLU\`.\`itemId\`
+    WHERE 
+        STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y') BETWEEN STR_TO_DATE(?, '%m/%d/%Y') 
+                                                      AND STR_TO_DATE(?, '%m/%d/%Y')
+    GROUP BY 
+        ${groupByClause}
+    ORDER BY 
+        ${dateFormat} ASC;
+`;
+
+connection.query(sql, [start, end], (error, results) => {
+    if (error) {
+        console.error('Error executing Profit Report query:', error);
+        return res.status(500).send('Error generating profit report');
+    }
+
+    const columns = [
+        { name: 'Date Range', class: 'string' },
+        { name: 'Total Invoices', class: 'int' },
+        { name: 'Total Quantity Sold', class: 'int' },
+        { name: 'Total Cost', class: 'number' },
+        { name: 'Gross Sales', class: 'number' },
+        { name: 'Total Discounts', class: 'number' },
+        { name: 'Gross Profit', class: 'number' }
+    ];
+
+    console.log("Results: ", results);
+    res.render('reports', { user, results, aggregate, type, start, end, columns });
+});
+
         } else if (type === 'Deliveries') {
             const sql = `
                 SELECT 
@@ -397,122 +548,58 @@ app.post('/reports', async function (req, res) {
             });
         } else if (type === 'Item Aging') {
             const sql = `
-                WITH DeliveriesAndSales AS (
+                WITH
+
+                -- Step 1: Calculate Total Sales
+                TotalSales AS (
+                    SELECT
+                        s.itemId,
+                        SUM(s.quantity) AS TotalSales
+                    FROM
+                        sales s
+                    GROUP BY
+                        s.itemId
+                ),
+
+                -- Step 2: Assign Deliveries to Age Buckets
+                DeliveryAges AS (
                     SELECT
                         d.itemId,
-                        d.date AS deliveryDate,
-                        d.quantity AS deliveredQuantity,
-                        IFNULL(SUM(s.quantity), 0) AS soldQuantity,
-                        GREATEST(d.quantity - IFNULL(SUM(s.quantity), 0), 0) AS remainingQuantity -- Prevent negative values
+                        d.itemName,
+                        CASE
+                            WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.date, '%m/%d/%Y')) <= 30 THEN 'Aged 1-30'
+                            WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.date, '%m/%d/%Y')) BETWEEN 31 AND 60 THEN 'Aged 31-60'
+                            WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.date, '%m/%d/%Y')) BETWEEN 61 AND 90 THEN 'Aged 61-90'
+                            WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.date, '%m/%d/%Y')) > 91 THEN 'Aged > 91'
+                        END AS AgeBucket,
+                        SUM(d.quantity) AS BucketQuantity
                     FROM
-                        phims.deliveries d
-                    LEFT JOIN phims.sales s ON d.itemId = s.itemId AND s.date >= d.date
+                        deliveries d
                     GROUP BY
-                        d.itemId, d.date, d.quantity
+                        d.itemId, d.itemName, AgeBucket
                 )
-                SELECT
-                    i.itemId,
-                    i.itemName,
-                    i.quantity AS totalQuantity, -- Current stock directly from inventory
-                    ROUND(AVG(DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y'))), 2) AS avgInventoryAge,
-                    SUM(
-                        CASE
-                            WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) BETWEEN 1 AND 30
-                            THEN d.remainingQuantity -- Remaining quantity after sales
-                            ELSE 0
-                        END
-                    ) AS aged1to30,
-                    SUM(
-                        CASE
-                            WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) BETWEEN 31 AND 60
-                            THEN d.remainingQuantity -- Remaining quantity after sales
-                            ELSE 0
-                        END
-                    ) AS aged31to60,
-                    SUM(
-                        CASE
-                            WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) BETWEEN 61 AND 90
-                            THEN d.remainingQuantity -- Remaining quantity after sales
-                            ELSE 0
-                        END
-                    ) AS aged61to90,
-                    SUM(
-                        CASE
-                            WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) > 91
-                            THEN d.remainingQuantity -- Remaining quantity after sales
-                            ELSE 0
-                        END
-                    ) + (
-                        i.quantity - (
-                            SUM(
-                                CASE
-                                    WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) BETWEEN 1 AND 30
-                                    THEN d.remainingQuantity
-                                    ELSE 0
-                                END
-                            ) +
-                            SUM(
-                                CASE
-                                    WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) BETWEEN 31 AND 60
-                                    THEN d.remainingQuantity
-                                    ELSE 0
-                                END
-                            ) +
-                            SUM(
-                                CASE
-                                    WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) BETWEEN 61 AND 90
-                                    THEN d.remainingQuantity
-                                    ELSE 0
-                                END
-                            ) +
-                            SUM(
-                                CASE
-                                    WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) > 91
-                                    THEN d.remainingQuantity
-                                    ELSE 0
-                                END
-                            )
-                        )
-                    ) AS agedOver91,
-                    i.quantity - (
-                        SUM(
-                            CASE
-                                WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) BETWEEN 1 AND 30
-                                THEN d.remainingQuantity
-                                ELSE 0
-                            END
-                        ) +
-                        SUM(
-                            CASE
-                                WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) BETWEEN 31 AND 60
-                                THEN d.remainingQuantity
-                                ELSE 0
-                            END
-                        ) +
-                        SUM(
-                            CASE
-                                WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) BETWEEN 61 AND 90
-                                THEN d.remainingQuantity
-                                ELSE 0
-                            END
-                        ) +
-                        SUM(
-                            CASE
-                                WHEN DATEDIFF(CURDATE(), STR_TO_DATE(d.deliveryDate, '%m/%d/%Y')) > 91
-                                THEN d.remainingQuantity
-                                ELSE 0
-                            END
-                        )
-                    ) AS untrackedStock
-                FROM
-                    phims.inventory i
-                LEFT JOIN DeliveriesAndSales d ON i.itemId = d.itemId
-                GROUP BY
-                    i.itemId, i.itemName, i.quantity
-                HAVING
-                    avgInventoryAge IS NOT NULL -- Filter to only include rows where avgInventoryAge is not NULL
-                ORDER BY
-                    avgInventoryAge DESC;
+
+                -- Final Query: Pivot Age Buckets and Calculate UntrackedStock
+                SELECT *
+                FROM (
+                    SELECT
+                        i.itemId,
+                        i.itemName,
+                        i.quantity AS Quantity,
+                        COALESCE(SUM(CASE WHEN da.AgeBucket = 'Aged 1-30' THEN da.BucketQuantity END), 0) AS Aged1to30,
+                        COALESCE(SUM(CASE WHEN da.AgeBucket = 'Aged 31-60' THEN da.BucketQuantity END), 0) AS Aged31to60,
+                        COALESCE(SUM(CASE WHEN da.AgeBucket = 'Aged 61-90' THEN da.BucketQuantity END), 0) AS Aged61to90,
+                        COALESCE(SUM(CASE WHEN da.AgeBucket = 'Aged > 91' THEN da.BucketQuantity END), 0) AS Aged91Plus,
+                        i.quantity - COALESCE(SUM(da.BucketQuantity), 0) AS Untracked
+                    FROM
+                        inventory i
+                        LEFT JOIN DeliveryAges da ON i.itemId = da.itemId
+                        LEFT JOIN TotalSales ts ON i.itemId = ts.itemId
+                    GROUP BY
+                        i.itemId, i.itemName, i.quantity, ts.TotalSales
+                ) AS SubQuery
+                WHERE
+                    Aged1to30 > 0 OR Aged31to60 > 0 OR Aged61to90 > 0 OR Aged91Plus > 0;
             `;
 
             connection.query(sql, [], (error, results) => {
@@ -525,15 +612,79 @@ app.post('/reports', async function (req, res) {
                     { name: 'Item ID', class: 'string' },
                     { name: 'Item Name', class: 'string' },
                     { name: 'Quantity', class: 'int' },
-                    { name: 'Avg Age (days)', class: 'number' },
+                    { name: 'Avg Age', class: 'number' },
                     { name: '1-30', class: 'int' },
                     { name: '31-60', class: 'int' },
                     { name: '61-90', class: 'int' },
-                    { name: '(> 91', class: 'int' },
-                    { name: 'Untracked)', class: 'int' }
+                    { name: '91+', class: 'int' },
+                    { name: 'Untracked', class: 'int' }
                 ];
 
-                console.log('Item Aging Query Results:', results);
+                results.forEach(row => {
+                    let Aged91Plus = Number(row.Aged91Plus) || 0;
+                    let Aged61to90 = Number(row.Aged61to90) || 0;
+                    let Aged31to60 = Number(row.Aged31to60) || 0;
+                    let Aged1to30 = Number(row.Aged1to30) || 0;
+                    let Untracked = Number(row.Untracked) || 0;
+                
+                    console.log("Initial Row Data:", row);
+                    console.log("Converted Values -> Aged91Plus:", Aged91Plus, "Aged61to90:", Aged61to90, "Aged31to60:", Aged31to60, "Aged1to30:", Aged1to30, "Untracked:", Untracked);
+                
+                    if (Untracked < 0) {
+                        let remainingUntracked = Math.abs(Untracked);
+                
+                        if (Aged91Plus > 0) {
+                            let deplete = Math.min(Aged91Plus, remainingUntracked);
+                            Aged91Plus -= deplete;
+                            remainingUntracked -= deplete;
+                        }
+                
+                        if (remainingUntracked > 0 && Aged61to90 > 0) {
+                            let deplete = Math.min(Aged61to90, remainingUntracked);
+                            Aged61to90 -= deplete;
+                            remainingUntracked -= deplete;
+                        }
+                
+                        if (remainingUntracked > 0 && Aged31to60 > 0) {
+                            let deplete = Math.min(Aged31to60, remainingUntracked);
+                            Aged31to60 -= deplete;
+                            remainingUntracked -= deplete;
+                        }
+                
+                        if (remainingUntracked > 0 && Aged1to30 > 0) {
+                            let deplete = Math.min(Aged1to30, remainingUntracked);
+                            Aged1to30 -= deplete;
+                            remainingUntracked -= deplete;
+                        }
+                
+                        Untracked = 0; 
+                    }
+                
+                    const totalQuantity = Aged1to30 + Aged31to60 + Aged61to90 + Aged91Plus;
+                
+                    console.log("Total Quantity:", totalQuantity);
+                
+                    let AvgAge = 0;
+                
+                    if (totalQuantity > 0) {
+                        const weightedSum = (Aged1to30 * 15) + (Aged31to60 * 45) + (Aged61to90 * 75) + (Aged91Plus * 105);
+                        AvgAge = weightedSum / totalQuantity;
+                        console.log("Weighted Sum:", weightedSum);
+                    }
+                
+                    console.log("AvgAge Calculated:", AvgAge);
+                
+                    row.Aged91Plus = Aged91Plus;
+                    row.Aged61to90 = Aged61to90;
+                    row.Aged31to60 = Aged31to60;
+                    row.Aged1to30 = Aged1to30;
+                    row.Untracked = Untracked;
+                    row.AvgAge = AvgAge.toFixed(2);
+                });
+                
+                results.sort((a, b) => parseFloat(b.AvgAge) - parseFloat(a.AvgAge));
+
+                console.log('Item Aging Results:', results);
 
                 res.render('reports', { user, results, aggregate, type, columns });
             });
@@ -675,7 +826,7 @@ app.post('/save-delivery', async function(req, res) {
     try {
         console.log('Delivery Data:', req.body);
         const remarks = req.body.remarks.trim();
-        const remarksFormat = /^SI\w+\s(0[1-9]|1[0-2])\/([0-2][0-9]|3[0-1])\/(\d{2}|\d{4})\s\d+\/\d+$/;
+        const remarksFormat = /^SI\w+\s(0?[1-9]|1[0-2])\/(0?[1-9]|[1-2][0-9]|3[0-1])\/(\d{2}|\d{4})\s\d+\/\d+$/;
 
         if (remarksFormat.test(remarks)) {
             const parts = remarks.split(" ");
@@ -684,9 +835,18 @@ app.post('/save-delivery', async function(req, res) {
             lastPageNum = parts[2];
 
             const dateParts = lastDate.split('/');
-            if (dateParts[2].length === 2) {
-                dateParts[2] = '20' + dateParts[2];
+
+            if (dateParts[0].length === 1) {
+                dateParts[0] = '0' + dateParts[0];
             }
+            if (dateParts[1].length === 1) {
+                dateParts[1] = '0' + dateParts[1]; 
+            }
+
+            if (dateParts[2].length === 2) {
+                dateParts[2] = '20' + dateParts[2]; 
+            }
+
             lastDate = dateParts.join('/');
 
             console.log("Last SI:", lastDeliverySi);
@@ -728,7 +888,7 @@ app.get('/encode-deliveries', async function(req, res) {
         }
 
         res.render('encode-deliveries', { user, plu, remarksString, deliverySaved });
-        deliverySaved = 0;
+        deliverySaved = 1;
     } catch (error) {
         res.redirect('/');
         console.error('Unexpected error:', error);
@@ -949,7 +1109,7 @@ app.post('/verify-login', async function(req, res) {
     try {
         const password = req.body.password;
 
-        connection.query('SELECT * FROM users WHERE password = ?', [password], (error, results) => {
+        connection.query('SELECT name, isAdmin FROM users WHERE password = ?', [password], (error, results) => {
             if (error) {
                 console.error('Query error:', error);
                 res.status(500).send('Unexpected error occurred');
@@ -958,7 +1118,7 @@ app.post('/verify-login', async function(req, res) {
 
             if (Array.isArray(results) && results.length > 0) {
                 status = true;
-                user = results[0].name;
+                user = results[0];
                 res.redirect('/home');
             } else {
                 status = false;

@@ -108,3 +108,27 @@ select {
 #search {
     width: 250px;
 }
+
+/* Users */
+
+.wide {
+    min-width: 200px;
+}
+
+.middle {
+    text-align: center;
+}
+
+.circle {
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+}
+
+.green {
+    background: #89ba94;
+}
+
+.red {
+    background: tomato;
+}

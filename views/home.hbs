@@ -3,6 +3,7 @@
         <title>Home</title>
         <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/home.css">
+        <link rel="icon" type="image/x-icon" href="/images/favicon.png">
     </head>
     <body>
         {{!-- Header --}}
@@ -16,7 +17,7 @@
             </div>
             <div class="sign-out">
                 <div>
-                    <span>{{ user }}</span> <br />
+                    <span>{{user.name}}</span> <br />
                     <a class="sign-out-button" href="/">Sign Out</a>
                 </div>
             </div>
@@ -42,12 +43,14 @@
                             Inventory
                         </button>
 
-                        <button href="/">
+                        {{#if user.isAdmin 1}} 
+                        <button onclick="window.location.href='/users'">
                             Users
                         </button>
+                        {{/if}}
 
-                        <button class="eoq" href="/">
-                            EOQ
+                        <button class="eoq" onclick="window.location.href='/ooq'">
+                            OOQ
                         </button>
                     </div>
 

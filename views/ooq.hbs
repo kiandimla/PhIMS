@@ -1,0 +1,158 @@
+<html>
+    <head>
+        <title>Reports</title>
+        <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/inventory.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/reports.css">
+        <link rel="icon" type="image/x-icon" href="/images/favicon.png">
+        <script src="../scripts/table2excel.js"></script>
+    </head>
+    <body>
+        {{!-- Header --}}
+        <div class="header-div">
+            <img class="logo" src="../images/logo.png">
+            <div class="flex center">
+                <ul>
+                    <li><a class="header-divider"></a></li>
+                    <li><a class="header-button" href="/home">Home</a></li>
+                    <li><a class="header-divider">></a></li>
+                    <li><a class="header-button on-page">OOQ</a></li>
+                </ul>
+            </div>
+            <div class="sign-out">
+                <div>
+                    <span>{{user.name}}</span> <br />
+                    <a class="sign-out-button" href="/">Sign Out</a>
+                </div>
+            </div>
+        </div>
+        <div class="body-div">
+            <div class="flex column container">
+                <div class="flex nav">
+                    <span class="title-card">Optimal Order Quantities</span>
+                    <div class="input-container">
+                        Sort by 
+                        <select id="sort">
+                            <option></option>
+                            <option>Avg Weekly Demand</option>
+                            <option>Optimal Order Quantity</option>
+                        </select> 
+                    </div>
+                    <div class="input-container">
+                        Order
+                        <select id="order">
+                            <option></option>
+                            <option>Descending</option>
+                            <option>Ascending</option>
+                        </select> 
+                    </div>
+                    <div class="input-container excel" id="excel-button">
+                        Export as .xlsx
+                    </div>
+                </div>
+                <div class="report-table-container">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                {{#each columns}}
+                                <th class="{{class}}">{{name}}</th>
+                                {{/each}}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each results}}
+                            <tr tabindex="0">
+                                <td class="string">{{itemId}}</td>
+                                <td class="string">{{itemName}}</td>
+                                <td class="number">{{AvgWeeklyDemand}}</td>
+                                <td class="number">{{WOS}}</td>
+                                <td class="int">{{SafetyStock}}</td>
+                                <td class="int">{{CurrentStock}}</td>
+                                <td class="int bold">{{OptimalOrderQuantity}}</td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </body>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const numberCells = document.querySelectorAll('td.number');
+        numberCells.forEach(cell => {
+            const value = cell.textContent.trim();
+
+            if (!isNaN(value) && value !== "") {
+                cell.textContent = Number(value).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        });
+
+        const excelButton = document.getElementById('excel-button');
+        excelButton.addEventListener('click', function() {
+            var table2excel = new Table2Excel();
+            table2excel.export(document.querySelectorAll(".report-table"));
+        });
+
+        const sortDropdown = document.getElementById('sort');
+        const orderDropdown = document.getElementById('order');
+        const tableBody = document.querySelector('.report-table tbody');
+
+        const columnMapping = {
+            "Avg Weekly Demand": 2, 
+            "Optimal Order Quantity": 6 
+        };
+
+        function disableDropdowns(disabled) {
+            sortDropdown.disabled = disabled;
+            orderDropdown.disabled = disabled;
+        }
+
+        function parseValue(value, cellClassList) {
+            if (cellClassList.contains('int') || cellClassList.contains('number')) {
+                const parsedValue = parseFloat(value.replace(/,/g, ''));
+                return isNaN(parsedValue) ? 0 : parsedValue; 
+            }
+            return value.toLowerCase().trim(); 
+        }
+
+        function sortTable(sortIndex, order) {
+            const rows = Array.from(tableBody.rows);
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[sortIndex];
+                const cellB = rowB.cells[sortIndex];
+
+                const valueA = parseValue(cellA.textContent.trim(), cellA.classList);
+                const valueB = parseValue(cellB.textContent.trim(), cellB.classList);
+
+                if (valueA < valueB) return order === 'Ascending' ? -1 : 1;
+                if (valueA > valueB) return order === 'Ascending' ? 1 : -1;
+                return 0;
+            });
+
+            rows.forEach(row => tableBody.appendChild(row));
+
+            disableDropdowns(false);
+        }
+
+        function handleSort() {
+            const sortColumnName = sortDropdown.value;
+            const sortBy = columnMapping[sortColumnName]; 
+            const order = orderDropdown.value;
+
+            if (sortBy !== undefined && (order === 'Ascending' || order === 'Descending')) {
+                disableDropdowns(true);
+                sortTable(sortBy, order);
+            }
+        }
+
+        sortDropdown.addEventListener('change', handleSort);
+        orderDropdown.addEventListener('change', handleSort);
+    });
+
+</script>
+</html>

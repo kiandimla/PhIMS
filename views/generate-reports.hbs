@@ -3,6 +3,7 @@
         <title>Generate Reports</title>
         <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/generate-reports.css">
+        <link rel="icon" type="image/x-icon" href="/images/favicon.png">
     </head>
     <body>
         {{!-- Header --}}
@@ -18,7 +19,7 @@
             </div>
             <div class="sign-out">
                 <div>
-                    <span>{{ user }}</span> <br />
+                    <span>{{user.name}}</span> <br />
                     <a class="sign-out-button" href="/">Sign Out</a>
                 </div>
             </div>
@@ -33,9 +34,11 @@
                             <select class="no-left-margin" name="report-type" id="report-type">
                                 <option></option>
                                 <option>Sales</option>
+                                {{#if user.isAdmin 1}} 
+                                <option>Profit</option>
+                                {{/if}}
                                 <option>Deliveries</option>
                                 <option>Item Performance</option>
-                                <option>Profit</option>
                                 <option>Item Aging</option>
                                 <option>Stock Card</option>
                             </select>

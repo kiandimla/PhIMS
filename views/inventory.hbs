@@ -3,6 +3,7 @@
         <title>Inventory</title>
         <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/inventory.css">
+        <link rel="icon" type="image/x-icon" href="/images/favicon.png">
     </head>
     <body>
         {{!-- Header --}}
@@ -18,7 +19,7 @@
             </div>
             <div class="sign-out">
                 <div>
-                    <span>{{ user }}</span> <br />
+                    <span>{{user.name}}</span> <br />
                     <a class="sign-out-button" href="/">Sign Out</a>
                 </div>
             </div>
@@ -67,13 +68,13 @@
                         <tbody>
                             {{#each inventory}}
                             <tr tabindex="0">
-                                <td>{{ itemId }}</td>
-                                <td class="item-name">{{ itemName }}</td>
-                                <td class="number">{{ quantity }}</td>
-                                <td class="number">{{ price }}</td>
-                                <td class="number">{{ cost }}</td>
-                                <td class="number">{{ markup }}</td>
-                                <td class="number">{{ markupPercent }}%</td>
+                                <td>{{itemId}}</td>
+                                <td class="item-name">{{itemName}}</td>
+                                <td class="number">{{quantity}}</td>
+                                <td class="number">{{price}}</td>
+                                <td class="number">{{cost}}</td>
+                                <td class="number">{{markup}}</td>
+                                <td class="number">{{markupPercent}}%</td>
                             </tr>
                             {{/each}}
                         </tbody>
@@ -125,7 +126,7 @@
             });
 
             rows.forEach(row => tableBody.appendChild(row));
-            disableDropdowns(false); // Re-enable dropdowns after sorting
+            disableDropdowns(false); 
         }
 
         function handleSort() {

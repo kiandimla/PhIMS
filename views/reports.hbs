@@ -4,6 +4,7 @@
         <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/inventory.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/reports.css">
+        <link rel="icon" type="image/x-icon" href="/images/favicon.png">
         <script src="../scripts/table2excel.js"></script>
     </head>
     <body>
@@ -22,7 +23,7 @@
             </div>
             <div class="sign-out">
                 <div>
-                    <span>{{user}}</span> <br />
+                    <span>{{user.name}}</span> <br />
                     <a class="sign-out-button" href="/">Sign Out</a>
                 </div>
             </div>
@@ -112,6 +113,17 @@
                                     <td class="number bold">{{NetSales}}</td>
                                 </tr>
                                 {{/if}}
+                                {{#if ../type "Profit"}} 
+                                <tr tabindex="0">
+                                    <td>{{DateRange}}</td>
+                                    <td class="int">{{TotalInvoices}}</td>
+                                    <td class="int">{{TotalQuantitySold}}</td>
+                                    <td class="number">{{TotalCost}}</td>
+                                    <td class="number">{{GrossSales}}</td>
+                                    <td class="number">{{TotalDiscounts}}</td>
+                                    <td class="number bold">{{GrossProfit}}</td>
+                                </tr>
+                                {{/if}}
 
                                 {{#if ../type "Deliveries"}} 
                                 <tr tabindex="0">
@@ -137,13 +149,13 @@
                                 <tr tabindex="0">
                                     <td>{{itemId}}</td>
                                     <td>{{itemName}}</td>
-                                    <td class="int">{{totalQuantity}}</td>
-                                    <td class="number">{{avgInventoryAge}}</td>
-                                    <td class="int">{{aged1to30}}</td>
-                                    <td class="int">{{aged31to60}}</td>
-                                    <td class="int">{{aged61to90}}</td>
-                                    <td class="int ">{{agedOver91}}</td>
-                                    <td class="int">{{untrackedStock}}</td>
+                                    <td class="int">{{Quantity}}</td>
+                                    <td class="number">{{AvgAge}}</td>
+                                    <td class="int">{{Aged1to30}}</td>
+                                    <td class="int">{{Aged31to60}}</td>
+                                    <td class="int">{{Aged61to90}}</td>
+                                    <td class="int ">{{Aged91Plus}}</td>
+                                    <td class="int">{{Untracked}}</td>
                                 </tr>
                                 {{/if}}
                             {{/each}}
