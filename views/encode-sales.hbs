@@ -57,8 +57,29 @@
                                 <td></td>
                                 <td></td>
                                 <td></td>
-                                <td class="discount">Total :</td>
-                                <td class="sale-total amount">₱ 0.00 <input type="hidden" name="sale-total" value="" /></td>
+                                <td class="subtitle border-top">Subtotal :</td>
+                                <td class="sale-subtotal amount border-top">₱ 0.00</td>
+                            </tr>
+                            <tr class="table-footer">
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td class="subtitle">Discounts :</td>
+                                <td class="sale-discount amount">₱ 0.00</td>
+                            </tr>
+                            <tr class="table-footer">
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td class="subtitle border-bottom">VAT (12%) :</td>
+                                <td class="sale-tax amount border-bottom">₱ 0.00</td>
+                            </tr>
+                            <tr class="table-footer">
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td class="total subtitle border-bottom bold">Total :</td>
+                                <td class="total sale-total amount border-bottom bold">₱ 0.00<input type="hidden" name="sale-total" value="" /></td>
                             </tr>
                         </tbody>
                     </table>
@@ -258,24 +279,62 @@ function handleBarcodeInput(barcode) {
 
         function updateTotalAmount() {
             const rows = encodeTableBody.querySelectorAll('tr.data');
+            let subtotal = 0;
+            let discountTotal = 0;
+            let vatTotal = 0;
             let total = 0;
+
             rows.forEach(row => {
                 const amountCell = row.querySelector('.amount');
                 const amount = parseFloat(amountCell.textContent) || 0;
-                total += amount;
+                subtotal += amount;
+
+                const discountCheckbox = row.querySelector('.discount input[type="checkbox"]');
+                if (discountCheckbox && discountCheckbox.checked) {
+                    const quantityCell = row.querySelector('.quantity');
+                    const priceCell = row.querySelector('.price');
+                    const quantity = parseInt(quantityCell.textContent, 10) || 0;
+                    const unitPrice = parseFloat(priceCell.textContent) || 0;
+                    const discountRate = getDiscountRate();
+                    discountTotal += quantity * unitPrice * discountRate;
+                }
             });
 
-            const saleTotalCell = encodeTableBody.querySelector('.sale-total.amount');
-            const totalTextNode = saleTotalCell.firstChild; 
-            if (totalTextNode && totalTextNode.nodeType === Node.TEXT_NODE) {
-                totalTextNode.textContent = "₱ " + total.toFixed(2);
-            } else {
-                saleTotalCell.insertBefore(document.createTextNode("₱ " + total.toFixed(2)), saleTotalCell.firstChild);
+            vatTotal = subtotal - (subtotal / 1.12);
+
+            total = subtotal;
+
+            const saleSubtotalCell = encodeTableBody.querySelector('.sale-subtotal.amount');
+            if (saleSubtotalCell) {
+                saleSubtotalCell.textContent = "₱ " + subtotal.toFixed(2);
             }
 
-            const saleTotalInput = saleTotalCell.querySelector('input[type="hidden"][name="sale-total"]');
-            saleTotalInput.value = total.toFixed(2);
+            const saleDiscountCell = encodeTableBody.querySelector('.sale-discount.amount');
+            if (saleDiscountCell) {
+                saleDiscountCell.textContent = "₱ " + discountTotal.toFixed(2);
+            }
+
+            const saleTaxCell = encodeTableBody.querySelector('.sale-tax.amount');
+            if (saleTaxCell) {
+                saleTaxCell.textContent = "₱ " + vatTotal.toFixed(2);
+            }
+
+            const saleTotalCell = encodeTableBody.querySelector('.sale-total.amount');
+            if (saleTotalCell) {
+                const totalTextNode = saleTotalCell.firstChild;
+                if (totalTextNode && totalTextNode.nodeType === Node.TEXT_NODE) {
+                    totalTextNode.textContent = "₱ " + total.toFixed(2);
+                } else {
+                    saleTotalCell.insertBefore(document.createTextNode("₱ " + total.toFixed(2)), saleTotalCell.firstChild);
+                }
+
+                const saleTotalInput = saleTotalCell.querySelector('input[type="hidden"][name="sale-total"]');
+                if (saleTotalInput) {
+                    saleTotalInput.value = total.toFixed(2);
+                }
+            }
         }
+
 
         function addItemToEncodeTable(itemName, itemPrice, itemId) {
             const existingRow = Array.from(encodeTableBody.querySelectorAll('tr.data')).find(row => {
@@ -333,7 +392,10 @@ function handleBarcodeInput(barcode) {
                     </td>
                 `;
 
-                encodeTableBody.insertBefore(newRow, encodeTableBody.lastElementChild);
+                const allRows = Array.from(encodeTableBody.children);
+                const targetIndex = allRows.length - 4;
+
+                encodeTableBody.insertBefore(newRow, allRows[targetIndex]);
 
                 updateRowAmount(newRow);
                 updateTotalAmount();

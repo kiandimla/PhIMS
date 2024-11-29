@@ -35,7 +35,12 @@
 }
 .encode-table tbody tr:last-of-type {
     border-bottom: 0;
-    font-weight: bold;
+}
+.encode-table tbody tr.table-footer {
+    border-bottom: solid #f1f1f1 2px;
+}
+.subtitle {
+    text-align: left;
 }
 
 .quantity {
@@ -131,8 +136,20 @@ tr[tabindex="0"]:focus {
     background-color: #FDF7C1;
 }
 
-.sale-total {
+.sale-total, .sale-subtotal, .sale-discount, .sale-tax {
+    font-size: large;
+    font-weight: bold;
+}
+
+.total {
     font-size: x-large;
+}
+
+.border-top {
+    border-top: solid 2px var(--primary);
+}
+.border-bottom {
+    border-bottom: solid 2px var(--primary);
 }
 
 .item-select {
@@ -230,7 +247,7 @@ tr[tabindex="0"]:focus {
     transform: translate(-50%, -50%);
     top: 50%;
     left: 50%;
-    font-size: 40px;
+    font-size: 30px;
     font-weight: bold;
     background-color: white;
     padding: 15px;
@@ -239,16 +256,16 @@ tr[tabindex="0"]:focus {
     box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
 }
 input[name="qty-input"], input[name="discount-input"] {
-    font-size: 70px;
-    width: 250px;
-    padding: 25px;
+    font-size: 40px;
+    width: 200px;
+    padding: 15px;
 }
 input[name="expiry-input"] {
     margin-top: 5px;
     font-size: 30px;
 }
 input[name="remarks-input"] {
-    width: 250px;
+    width: 200px;
     margin-top: 5px;
 }
 input[name="remarks"] {

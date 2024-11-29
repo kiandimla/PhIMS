@@ -795,7 +795,7 @@ function insertDeliveryItems(delivery) {
                 parseFloat(item.amount),       // itemSubtotal
                 parseFloat(delivery['sale-total']), // deliveryTotal
                 encodeDate,                    // encodeDate
-                user                           // encodePerson
+                user.name                           // encodePerson
             ];
 
             console.log("deliveryId:", ids[index], "itemId:", itemId);
@@ -965,7 +965,6 @@ function insertSaleItems(saleData) {
     const itemCount = saleData.items.length;
     const discountRate = parseInt(saleData.discount, 10) || 0;
 
-    // Check if invoiceNum already exists and update saleTotal if needed
     connection.query(`SELECT saleTotal FROM sales WHERE invoiceNum = ?`, [lastSaleSi], (error, results) => {
         if (error) {
             console.error('Error checking existing sale total:', error);
@@ -977,7 +976,6 @@ function insertSaleItems(saleData) {
         const newSaleTotal = parseFloat(saleData['sale-total']);
         const updatedTotal = existingSaleTotal + newSaleTotal;
 
-        // Update the saleTotal of the existing invoice
         connection.query(updateTotalSql, [updatedTotal, lastSaleSi], (updateError) => {
             if (updateError) {
                 console.error('Error updating sale total:', updateError);
@@ -985,7 +983,6 @@ function insertSaleItems(saleData) {
             }
             console.log(`Updated saleTotal for invoiceNum ${lastSaleSi} to ${updatedTotal}`);
 
-            // Proceed to insert new sale items with the updated saleTotal
             getNextSaleIds(itemCount, (idError, ids) => {
                 if (idError) {
                     console.error('Error getting next saleIds:', idError);
@@ -1013,7 +1010,7 @@ function insertSaleItems(saleData) {
                         item.discount === 'on' ? saleData.remarks || 'Default' : 'No Discount', // discountRemarks (only if discounted)
                         parseFloat(item.amount),               // itemSubtotal
                         updatedTotal,                          // saleTotal (use the updated total)
-                        user                                   // encodePerson
+                        user.name                                   // encodePerson
                     ];
 
                     console.log("saleId:", ids[index], "itemId:", itemId);

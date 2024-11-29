@@ -62,3 +62,10 @@ a {
     background-color: #23A55A;
     border: solid 2px #23A55A;
 }
+
+.sales {
+    background-image: url("../images/sales.png");
+    background-position: center;
+    background-size: 45px;
+    background-repeat: no-repeat;
+}
