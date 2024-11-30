@@ -1,49 +1,82 @@
 
-    .login-container {
-        width: 250px;
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-        text-align: center;
-    }
-    .logo-full {
-        margin-bottom: 20px;
-    }
-    input[type="password"] {
-        width: 90%;
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-    button {
-        padding: 10px 15px;
-        background-color: #818589;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        width: 100%;
-    }
-    a {
-        text-decoration: none; 
-    }
+.login-container {
+    width: 250px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+.logo-full {
+    margin-bottom: 20px;
+}
+input {
+    width: 90%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+input.reset-name, input.reset-key {
+    width: 45%;
+}
 
-    button:hover {
-        background-color: #36454F;
-    }
+button {
+    padding: 5px;
+    background-color: #818589;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 42.5%;
+    margin: 5px;
+}
+a {
+    text-decoration: none; 
+}
 
-    .error-message {
-        color: white;
-        background-color: red;
-        font-size: small;
-        padding: 5px;
-        border-radius: 6px;
-        align-self: center;
-        position: absolute;
-        top: 20%;
-        box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
-    } .error-message:hover {
-        background-color: tomato;
-    }
+button:hover {
+    background-color: #36454F;
+}
+
+.error-message {
+    color: white;
+    background-color: red;
+    font-size: small;
+    padding: 5px;
+    border-radius: 6px;
+    align-self: center;
+    position: absolute;
+    top: 20%;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+
+    opacity: 0;
+    transition: opacity 0.5s ease; 
+} .error-message:hover {
+    background-color: tomato;
+}
+
+.forgot {
+    color: #36454F;
+    font-size: small;
+} .forgot:hover {
+    color: tomato;
+}
+
+.reset {
+    font-weight: bold;
+    font-size: large;
+    margin-bottom: 15px;
+}
+
+.cancel-button {
+    background-color: tomato;
+} .cancel-button:hover {
+    background-color: #ff846e;
+}
+
+.reset-button {
+    background-color: #61c376;
+} .reset-button:hover {
+    background-color: #84d284;
+}

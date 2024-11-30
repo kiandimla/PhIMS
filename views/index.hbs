@@ -10,32 +10,58 @@
             <form id="login-form" action="/verify-login" method="post">
                 <div class="login-container">
                     <img src="images/logo-full.png" alt="Logo" class="logo-full" width="150">
+
+                    <input id="name" type="text" name="name" placeholder="Username" required>
                     <input id="password" type="password" name="password" placeholder="Password" required>
+
                     <button type="submit" hidden>Login</button>
+                    <a class="forgot" href="/forgot">Forgot Password?</a>
                 </div>
             </form>
-            <span class="error-message" id="error-message" hidden>Invalid password</span>
+            <span class="error-message" id="error-message" hidden>Invalid details</span>
         </div>
     </body>
     <script>
-        const password = document.getElementById("password");
-        window.onload = () => {
-            password.focus();
-        };
+        document.addEventListener("DOMContentLoaded", function () {
+            const name = document.getElementById("name");
+            const password = document.getElementById("password");
+            const form = document.getElementById("login-form");
 
-        const body = document.querySelector('.body-div');
-        const login = body.getAttribute('login-status-data');
-        const error = document.getElementById("error-message");
+            window.onload = () => {
+                name.focus();
+            };
 
-        if (login === "false") {
-            error.hidden = false;
-        } else {
-            
-        }
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
 
-        error.addEventListener("click", (event) => {
-            error.hidden = true;
+                    if (document.activeElement === name) {
+                        password.focus();
+                    } else if (document.activeElement === password) {
+                        if (password.value.trim() !== "") {
+                            form.submit();
+                        } else {
+                            name.focus();
+                        }
+                    }
+                }
+            });
+
+            const body = document.querySelector('.body-div');
+            const login = body.getAttribute('login-status-data');
+            const error = document.getElementById("error-message");
+
+            if (login === "false") {
+                error.hidden = false;
+                error.style.opacity = 1;
+                setTimeout(() => {
+                    error.style.opacity = 0;
+                }, 3000);
+            }
+
+            error.addEventListener("click", (event) => {
+                error.hidden = true;
+            });
         });
-        
     </script>
 </html>

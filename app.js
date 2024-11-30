@@ -28,6 +28,7 @@ app.use(express.static(__dirname));
 const path = require('path');
 
 const hbs = require('hbs');
+const { stat } = require('fs');
 app.set('view engine','hbs');
 
 app.use(express.json()); 
@@ -60,7 +61,7 @@ hbs.registerHelper('isLast', function(index, array, options) {
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var user, status;
+var user, status, resetStatus;
 var lastDeliverySi, lastDate, lastPageNum;
 var lastSaleSi;
 var deliverySaved;
@@ -110,9 +111,13 @@ app.get('/ooq', async function(req, res) {
                 ROUND(i.quantity / (SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7), 2) AS WOS,
                 ROUND((SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7) * 0.15, 2) AS SafetyStock,
                 i.quantity AS CurrentStock,
-                ROUND((SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7) + 
-                    (SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7) * 0.2 - 
-                    i.quantity, 0) AS OptimalOrderQuantity
+                GREATEST(
+                    ROUND(
+                        (SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7) + 
+                        (SUM(s.quantity) / (DATEDIFF(STR_TO_DATE(MAX(s.date), '%m/%d/%Y'), STR_TO_DATE(MIN(s.date), '%m/%d/%Y')) + 1) * 7) * 0.2 - 
+                        i.quantity, 0
+                    ), 0
+                ) AS OptimalOrderQuantity                
             FROM 
                 sales s
             JOIN 
@@ -152,6 +157,111 @@ app.get('/ooq', async function(req, res) {
     }
 });
 
+var editStatus, addStatus;
+app.post('/add-item', async function (req, res) {
+    if (!user) return res.redirect('/');
+
+    try {
+        console.log('Add Item Data:', req.body);
+        const { itemId, itemName, price, cost, perishable } = req.body;
+
+        const isPerishable = perishable ? 1 : 0;
+
+        const today = new Date();
+        const dateChange = ("0" + (today.getMonth() + 1)).slice(-2) + '/' +
+                           ("0" + today.getDate()).slice(-2) + '/' +
+                           today.getFullYear();
+
+        const userChange = user.name;
+
+        const pluQuery = `
+            INSERT INTO PhIMS.PLU (
+                itemId, itemName, price, cost, isPerishable, dateChange, userChange
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE 
+                price = VALUES(price), 
+                cost = VALUES(cost), 
+                prevPrice = price, 
+                prevCost = cost, 
+                dateChange = VALUES(dateChange), 
+                userChange = VALUES(userChange);
+        `;
+
+        const inventoryQuery = `
+            INSERT INTO PhIMS.inventory (itemId, itemName, quantity)
+            VALUES (?, ?, 0)
+            ON DUPLICATE KEY UPDATE 
+                itemName = VALUES(itemName);
+        `;
+
+        connection.query(
+            pluQuery,
+            [itemId, itemName, price, cost, isPerishable, dateChange, userChange],
+            (err, results) => {
+                if (err) {
+                    console.error('Error updating PLU table:', err);
+                    addStatus = false;
+                    return res.redirect('/inventory');
+                }
+
+                connection.query(
+                    inventoryQuery,
+                    [itemId, itemName],
+                    (err, results) => {
+                        if (err) {
+                            console.error('Error updating inventory table:', err);
+                            addStatus = false;
+                            return res.redirect('/inventory');
+                        }
+
+                        addStatus = true;
+                        initializePLU(); 
+                        res.redirect('/inventory');
+                    }
+                );
+            }
+        );
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        res.status(500).send('Unexpected error occurred');
+        addStatus = false;
+        res.redirect('/inventory');
+    }
+});
+
+app.post('/edit-item', async function(req, res) {
+    if (!user) return res.redirect('/');
+
+    try {
+        console.log('Edit Item Data:', req.body);
+        const itemId = req.body.itemId;
+        const newPrice = req.body.price;
+        const newCost = req.body.cost;
+
+        const query = `
+            UPDATE PLU
+            SET price = ?, cost = ?, prevPrice = price, prevCost = cost, dateChange = DATE_FORMAT(CURDATE(), '%m/%d/%Y'), userChange = ?
+            WHERE itemId = ?
+        `;
+
+        connection.query(query, [newPrice, newCost, user.name, itemId], (err, results) => {
+            if (err) {
+                console.error('Error fetching data from joined PLU and inventory tables:', err);
+                editStatus = false;
+                return res.redirect('/inventory');
+            }
+            editStatus = true;
+            initializePLU();
+            res.redirect('/inventory');
+        });
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        res.status(500).send('Unexpected error occurred');
+        editStatus = false;
+        res.redirect('/inventory');
+    }
+});
+
 app.get('/inventory', async function(req, res) {
     if (!user) return res.redirect('/');
     try {
@@ -166,7 +276,6 @@ app.get('/inventory', async function(req, res) {
                 ROUND(((PLU.price - PLU.cost) / PLU.cost * 100), 2) AS markupPercent
             FROM inventory
             INNER JOIN PLU ON inventory.itemId = PLU.itemId
-            WHERE inventory.quantity > 0
             ORDER BY inventory.quantity DESC;
         `;
 
@@ -176,7 +285,9 @@ app.get('/inventory', async function(req, res) {
                 return;
             }
             const inventory = results;
-            res.render('inventory', { user, inventory });
+            res.render('inventory', { user, inventory, editStatus, addStatus });
+            editStatus = undefined;
+            addStatus = undefined;
         });
     } catch (error) {
         res.redirect('/');
@@ -271,10 +382,10 @@ app.post('/reports', async function (req, res) {
 
                 const columns = [
                     { name: 'Date Range', class: 'string' },
-                    { name: 'Total Invoices', class: 'int' },
-                    { name: 'Total Quantity Sold', class: 'int' },
+                    { name: 'Invoices', class: 'int' },
+                    { name: 'Quantity Sold', class: 'int' },
                     { name: 'Gross Sales', class: 'number' },
-                    { name: 'Total Discounts', class: 'number' },
+                    { name: 'Discounts', class: 'number' },
                     { name: 'Net Sales', class: 'number' }
                 ];
 
@@ -284,81 +395,80 @@ app.post('/reports', async function (req, res) {
         } else if (type === 'Profit') {
             let groupByClause, selectAdditionalField, dateFormat;
 
-switch (aggregate) {
-    case 'Daily':
-        groupByClause = "`sales`.`date`";
-        selectAdditionalField = "`sales`.`date` AS `DateRange`";
-        dateFormat = "`sales`.`date`";
-        break;
-    case 'Weekly':
-        groupByClause = "YEAR(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y')), WEEK(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'))";
-        selectAdditionalField = `
-            CONCAT(
-                DATE_FORMAT(MIN(STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y')), '%m/%d/%Y'),
-                ' - ',
-                DATE_FORMAT(MAX(STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y')), '%m/%d/%Y')
-            ) AS \`DateRange\``;
-        dateFormat = "MIN(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'))";
-        break;
-    case 'Monthly':
-        groupByClause = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%m/%Y')";
-        selectAdditionalField = `
-            DATE_FORMAT(STR_TO_DATE(\`sales\`.\`date\`, '%m/%Y')) AS \`DateRange\``;
-        dateFormat = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%m/%Y')";
-        break;
-    case 'Yearly':
-        groupByClause = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%Y')";
-        selectAdditionalField = `
-            DATE_FORMAT(STR_TO_DATE(\`sales\`.\`date\`, '%Y')) AS \`DateRange\``;
-        dateFormat = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%Y')";
-        break;
-    default:
-        return res.status(400).send('Unsupported aggregation type');
-}
+            switch (aggregate) {
+                case 'Daily':
+                    groupByClause = "`sales`.`date`";
+                    selectAdditionalField = "`sales`.`date` AS `DateRange`";
+                    dateFormat = "`sales`.`date`";
+                    break;
+                case 'Weekly':
+                    groupByClause = "YEAR(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y')), WEEK(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'))";
+                    selectAdditionalField = `
+                        CONCAT(
+                            DATE_FORMAT(MIN(STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y')), '%m/%d/%Y'),
+                            ' - ',
+                            DATE_FORMAT(MAX(STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y')), '%m/%d/%Y')
+                        ) AS \`DateRange\``;
+                    dateFormat = "MIN(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'))";
+                    break;
+                case 'Monthly':
+                    groupByClause = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%m/%Y')";
+                    selectAdditionalField = `
+                        DATE_FORMAT(STR_TO_DATE(\`sales\`.\`date\`, '%m/%Y')) AS \`DateRange\``;
+                    dateFormat = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%m/%Y')";
+                    break;
+                case 'Yearly':
+                    groupByClause = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%Y')";
+                    selectAdditionalField = `
+                        DATE_FORMAT(STR_TO_DATE(\`sales\`.\`date\`, '%Y')) AS \`DateRange\``;
+                    dateFormat = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%Y')";
+                    break;
+                default:
+                    return res.status(400).send('Unsupported aggregation type');
+            }
 
-const sql = `
-    SELECT 
-        ${selectAdditionalField},
-        COUNT(DISTINCT \`sales\`.\`invoiceNum\`) AS \`TotalInvoices\`,
-        SUM(\`sales\`.\`quantity\`) AS \`TotalQuantitySold\`,
-        ROUND(SUM(\`sales\`.\`quantity\` * \`PLU\`.\`cost\`), 2) AS \`TotalCost\`,
-        ROUND(SUM(DISTINCT \`sales\`.\`saleTotal\`) + SUM((\`sales\`.\`price\` * \`sales\`.\`quantity\`) * (\`sales\`.\`discountPercent\` / 100)), 2) AS \`GrossSales\`,
-        ROUND(SUM((\`sales\`.\`price\` * \`sales\`.\`quantity\`) * (\`sales\`.\`discountPercent\` / 100)), 2) AS \`TotalDiscounts\`,
-        ROUND(SUM(DISTINCT \`sales\`.\`saleTotal\`) - 
-            (SUM((\`sales\`.\`price\` * \`sales\`.\`quantity\`) * (\`sales\`.\`discountPercent\` / 100)) + SUM(\`sales\`.\`quantity\` * \`PLU\`.\`cost\`)), 2) AS \`GrossProfit\`
-    FROM 
-        \`PhIMS\`.\`sales\`
-    JOIN 
-        \`PhIMS\`.\`PLU\` ON \`sales\`.\`itemId\` = \`PLU\`.\`itemId\`
-    WHERE 
-        STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y') BETWEEN STR_TO_DATE(?, '%m/%d/%Y') 
-                                                      AND STR_TO_DATE(?, '%m/%d/%Y')
-    GROUP BY 
-        ${groupByClause}
-    ORDER BY 
-        ${dateFormat} ASC;
-`;
+            const sql = `
+                SELECT 
+                    ${selectAdditionalField},
+                    COUNT(DISTINCT \`sales\`.\`invoiceNum\`) AS \`TotalInvoices\`,
+                    SUM(\`sales\`.\`quantity\`) AS \`TotalQuantitySold\`,
+                    ROUND(SUM(\`sales\`.\`quantity\` * \`PLU\`.\`cost\`), 2) AS \`TotalCost\`,
+                    ROUND(SUM(DISTINCT \`sales\`.\`saleTotal\`) + SUM((\`sales\`.\`price\` * \`sales\`.\`quantity\`) * (\`sales\`.\`discountPercent\` / 100)), 2) AS \`GrossSales\`,
+                    ROUND(SUM((\`sales\`.\`price\` * \`sales\`.\`quantity\`) * (\`sales\`.\`discountPercent\` / 100)), 2) AS \`TotalDiscounts\`,
+                    ROUND(SUM(DISTINCT \`sales\`.\`saleTotal\`) - 
+                        (SUM((\`sales\`.\`price\` * \`sales\`.\`quantity\`) * (\`sales\`.\`discountPercent\` / 100)) + SUM(\`sales\`.\`quantity\` * \`PLU\`.\`cost\`)), 2) AS \`GrossProfit\`
+                FROM 
+                    \`PhIMS\`.\`sales\`
+                JOIN 
+                    \`PhIMS\`.\`PLU\` ON \`sales\`.\`itemId\` = \`PLU\`.\`itemId\`
+                WHERE 
+                    STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y') BETWEEN STR_TO_DATE(?, '%m/%d/%Y') 
+                                                                AND STR_TO_DATE(?, '%m/%d/%Y')
+                GROUP BY 
+                    ${groupByClause}
+                ORDER BY 
+                    ${dateFormat} ASC;
+            `;
 
-connection.query(sql, [start, end], (error, results) => {
-    if (error) {
-        console.error('Error executing Profit Report query:', error);
-        return res.status(500).send('Error generating profit report');
-    }
+            connection.query(sql, [start, end], (error, results) => {
+                if (error) {
+                    console.error('Error executing Profit Report query:', error);
+                    return res.status(500).send('Error generating profit report');
+                }
 
-    const columns = [
-        { name: 'Date Range', class: 'string' },
-        { name: 'Total Invoices', class: 'int' },
-        { name: 'Total Quantity Sold', class: 'int' },
-        { name: 'Total Cost', class: 'number' },
-        { name: 'Gross Sales', class: 'number' },
-        { name: 'Total Discounts', class: 'number' },
-        { name: 'Gross Profit', class: 'number' }
-    ];
+                const columns = [
+                    { name: 'Date Range', class: 'string' },
+                    { name: 'Invoices', class: 'int' },
+                    { name: 'Quantity Sold', class: 'int' },
+                    { name: 'Cost', class: 'number' },
+                    { name: 'Gross Sales', class: 'number' },
+                    { name: 'Discounts', class: 'number' },
+                    { name: 'Gross Profit', class: 'number' }
+                ];
 
-    console.log("Results: ", results);
-    res.render('reports', { user, results, aggregate, type, start, end, columns });
-});
-
+                console.log("Results: ", results);
+                res.render('reports', { user, results, aggregate, type, start, end, columns });
+            });
         } else if (type === 'Deliveries') {
             const sql = `
                 SELECT 
@@ -1104,9 +1214,10 @@ app.get('/home', async function(req, res) {
 
 app.post('/verify-login', async function(req, res) {
     try {
+        const name = req.body.name;
         const password = req.body.password;
 
-        connection.query('SELECT name, isAdmin FROM users WHERE password = ?', [password], (error, results) => {
+        connection.query('SELECT name, isAdmin FROM users WHERE LOWER(name) = LOWER(?) AND password = ?', [name, password], (error, results) => {
             if (error) {
                 console.error('Query error:', error);
                 res.status(500).send('Unexpected error occurred');
@@ -1128,9 +1239,66 @@ app.post('/verify-login', async function(req, res) {
     }
 });
 
+app.post('/confirm-reset', async function(req, res) {
+    const name = req.body.name;
+    const key = req.body.key;
+    const password = req.body.password;
+
+    try {
+        connection.query(
+            'SELECT * FROM users WHERE LOWER(name) = LOWER(?) AND `key` = ?',
+            [name, key],
+            (error, results) => {
+                if (error) {
+                    console.error('Query error:', error);
+                    res.status(500).send('Unexpected error occurred');
+                    return;
+                }
+
+                if (results.length === 0) {
+                    console.error('Invalid name or key');
+                    resetStatus = false;
+                    res.redirect('/forgot');
+                }
+
+                connection.query(
+                    'UPDATE users SET password = ? WHERE LOWER(name) = LOWER(?) AND `key` = ?',
+                    [password, name, key],
+                    (updateError) => {
+                        if (updateError) {
+                            console.error('Password update error:', updateError);
+                            resetStatus = false;
+                            res.redirect('/forgot');
+                        }
+
+                        console.log('Password updated successfully.');
+                        resetStatus = true;
+                        res.redirect('/forgot'); 
+                    }
+                );
+            }
+        );
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        res.status(500).send('Unexpected error occurred.');
+    }
+});
+
+app.get('/forgot', async function(req, res) {
+    try {
+        res.render('forgot', { resetStatus });
+        resetStatus = undefined;
+    } catch (error) {
+        res.redirect('/');
+        console.error('Unexpected error:', error);
+    }
+});
+
 app.get('/', async function(req, res) {
     try {
+        user = undefined;
         res.render('index', { status });
+        status = undefined;
     } catch (error) {
         res.redirect('/');
         console.error('Unexpected error:', error);

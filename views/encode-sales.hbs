@@ -101,12 +101,12 @@
                     </thead>
                     <tbody>
                         {{#each inventory}}
-                            <tr>
-                                <td class="select-description">{{itemName}}</td>
-                                <td class="select-price">{{price}}</td>
-                                <td class="select-code">{{itemId}}</td>
-                                <td class="select-qty" hidden>{{quantity}}</td>
-                            </tr>
+                        <tr>
+                            <td class="select-description">{{itemName}}</td>
+                            <td class="select-price">{{price}}</td>
+                            <td class="select-code">{{itemId}}</td>
+                            <td class="select-qty" hidden>{{quantity}}</td>
+                        </tr>
                         {{/each}}
                     </tbody>
                 </table>
@@ -180,61 +180,61 @@
         discountInput.style.visibility = "hidden";
         saleIdInput.focus();
 
-let barcodeBuffer = "";
-let lastKeyTime = Date.now();
+        let barcodeBuffer = "";
+        let lastKeyTime = Date.now();
 
-document.addEventListener("keydown", function (event) {
-    const currentTime = Date.now();
-    const timeDifference = currentTime - lastKeyTime;
+        document.addEventListener("keydown", function (event) {
+            const currentTime = Date.now();
+            const timeDifference = currentTime - lastKeyTime;
 
-    if (timeDifference > 15) {
-        barcodeBuffer = "";
-    }
+            if (timeDifference > 15) {
+                barcodeBuffer = "";
+            }
 
-    lastKeyTime = currentTime;
+            lastKeyTime = currentTime;
 
-    if (event.key.length === 1) { 
-        barcodeBuffer += event.key;
-    } else if (event.key === "Enter") {
-        if (barcodeBuffer.length > 0) { 
-            event.preventDefault(); 
-            const barcode = barcodeBuffer; 
-            handleBarcodeInput(barcode); 
-            barcodeBuffer = "";
-        } else {
-            return;
+            if (event.key.length === 1) { 
+                barcodeBuffer += event.key;
+            } else if (event.key === "Enter") {
+                if (barcodeBuffer.length > 0) { 
+                    event.preventDefault(); 
+                    const barcode = barcodeBuffer; 
+                    handleBarcodeInput(barcode); 
+                    barcodeBuffer = "";
+                } else {
+                    return;
+                }
+            }
+        });
+
+        function handleBarcodeInput(barcode) {
+            const matchedRow = Array.from(pluRows).find(row => {
+                const codeCell = row.querySelector(".select-code");
+                return codeCell && codeCell.textContent.trim() === barcode.trim();
+            });
+
+            if (matchedRow) {
+                const itemName = matchedRow.querySelector(".select-description").textContent;
+                const itemPrice = matchedRow.querySelector(".select-price").textContent;
+                const itemId = matchedRow.querySelector(".select-code").textContent;
+
+                const newRow = addItemToEncodeTable(itemName, itemPrice, itemId);
+                setTimeout(() => {
+                    itemSelect.style.visibility = "hidden";
+                    bodyDiv.classList.remove("blur");
+                    newRow.focus();
+                    lastFocusedRow = newRow;            
+                }, 10);
+                
+            } else {
+                setTimeout(() => {
+                    itemSelect.style.visibility = "hidden";
+                    bodyDiv.classList.remove("blur");
+                }, 10);
+                
+                showError(`Item with barcode ${barcode} not found.`);
+            }
         }
-    }
-});
-
-function handleBarcodeInput(barcode) {
-    const matchedRow = Array.from(pluRows).find(row => {
-        const codeCell = row.querySelector(".select-code");
-        return codeCell && codeCell.textContent.trim() === barcode.trim();
-    });
-
-    if (matchedRow) {
-        const itemName = matchedRow.querySelector(".select-description").textContent;
-        const itemPrice = matchedRow.querySelector(".select-price").textContent;
-        const itemId = matchedRow.querySelector(".select-code").textContent;
-
-        const newRow = addItemToEncodeTable(itemName, itemPrice, itemId);
-        setTimeout(() => {
-            itemSelect.style.visibility = "hidden";
-            bodyDiv.classList.remove("blur");
-            newRow.focus();
-            lastFocusedRow = newRow;            
-        }, 10);
-        
-    } else {
-        setTimeout(() => {
-            itemSelect.style.visibility = "hidden";
-            bodyDiv.classList.remove("blur");
-        }, 10);
-        
-        showError(`Item with barcode ${barcode} not found.`);
-    }
-}
 
         function showError(message) {
             const error = document.getElementById("error-message");
@@ -334,7 +334,6 @@ function handleBarcodeInput(barcode) {
                 }
             }
         }
-
 
         function addItemToEncodeTable(itemName, itemPrice, itemId) {
             const existingRow = Array.from(encodeTableBody.querySelectorAll('tr.data')).find(row => {

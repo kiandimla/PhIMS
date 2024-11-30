@@ -24,7 +24,7 @@
                 </div>
             </div>
         </div>
-        <div class="body-div">
+        <div class="body-div" edit-status-data="{{editStatus}}" add-status-data="{{addStatus}}">
             <div class="flex column container">
                 <div class="flex nav">
                     <span class="title-card">Inventory</span>
@@ -49,7 +49,10 @@
                         </select> 
                     </div>
                     <div class="input-container">
-                        <input id="search" name="search" type="text">
+                        <input id="search" name="search" type="text" placeholder="Search">
+                    </div>
+                    <div id="add-item" class="input-container add-item">
+                        Add Item
                     </div>
                 </div>
                 <div class="table-container">
@@ -82,13 +85,89 @@
                 </div>
             </div>
         </div>
+        <div id="edit-input" class="flex column overlay-input">
+            <form action="/edit-item" class="flex column" method="post">
+                <span class="edit-title">Edit Item:</span>
+                <span id="edit-item" class="edit-item"></span>
+                <input id="itemId" name="itemId" type="hidden" value=""></input>
+ 
+                <span class="price">Price: </span>
+                <input id="price-input" class="edit-input" type="text" name="price" value="" required>
+            
+                <span class="cost">Cost: </span>
+                <input id="cost-input" class="edit-input" type="text" name="cost" value="" required>
+
+                <div class="center">
+                    <button class="cancel-button" type="button">Cancel</button>
+                    <button class="save-button" type="submit">Save</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="add-input" class="flex column add-overlay-input">
+            <form action="/add-item" class="flex column" method="post">
+                <span class="add-title">Add Item:</span>
+
+                <span class="id">Item ID: </span>
+                <input id="add-itemId" class="edit-input" name="itemId" type="text"></input>
+
+                <span class="name">Item name: </span>
+                <input id="add-itemName" class="edit-input" name="itemName" type="text"></input>
+ 
+                <span class="price">Price: </span>
+                <input id="add-price-input" class="edit-input" type="text" name="price" value="" required>
+            
+                <span class="cost">Cost: </span>
+                <input id="add-cost-input" class="edit-input" type="text" name="cost" value="" required>
+
+                <span class="cost">Perishable: </span>
+                <div>
+                    <div class="checkbox-wrapper-2">
+                        <input id="add-perishable" type="checkbox" name="perishable" class="sc-gJwTLC ikxBAC" />
+                    </div>
+                </div>
+
+                <div class="center">
+                    <button class="add-cancel-button" type="button">Cancel</button>
+                    <button class="add-save-button" onclick="return validateFields()" type="submit">Add</button>
+                </div>
+            </form>
+        </div>
+        <span class="error-message" id="error-message" hidden></span>
     </body>
 <script>
+    function validateFields() {
+        const newItemId = document.getElementById('add-itemId').value.trim();
+        const rows = document.querySelectorAll('tbody tr');
+        const error = document.getElementById("error-message");
+
+        for (const row of rows) {
+            const existingItemId = row.cells[0].textContent.trim(); 
+            if (existingItemId === newItemId) {
+                error.textContent = "Item ID already exists";
+                error.style.backgroundColor = "tomato";
+                error.hidden = false;
+                error.style.opacity = 1;
+                setTimeout(() => {
+                    error.style.opacity = 0;
+                }, 3000);
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
+        var onOther;
+        const error = document.getElementById("error-message");
         const sortDropdown = document.getElementById("sort");
         const orderDropdown = document.getElementById("order");
         const searchInput = document.getElementById("search");
         const tableBody = document.querySelector(".inventory-table tbody");
+        const bodyDiv = document.querySelector(".body-div");
+        const edit = bodyDiv.getAttribute('edit-status-data');
+        const add = bodyDiv.getAttribute('add-status-data');
         const columnMap = {
             "Item Name": 1,
             "Quantity": 2,
@@ -97,6 +176,42 @@
             "Markup": 5,
             "Markup Percent": 6,
         };
+
+        if (edit === "true") {
+            error.textContent = "Edit successfully";
+            error.style.backgroundColor = "limegreen";
+            error.hidden = false;
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 3000);
+        } else if (edit === "false") {
+            error.textContent = "Edit failed";
+            error.style.backgroundColor = "tomato";
+            error.hidden = false;
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 3000);
+        }
+
+        if (add === "true") {
+            error.textContent = "Item added successfully";
+            error.style.backgroundColor = "limegreen";
+            error.hidden = false;
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 3000);
+        } else if (add === "false") {
+            error.textContent = "Add failed";
+            error.style.backgroundColor = "tomato";
+            error.hidden = false;
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 3000);
+        }
 
         function disableDropdowns(disabled) {
             sortDropdown.disabled = disabled;
@@ -154,6 +269,119 @@
         sortDropdown.addEventListener("change", handleSort);
         orderDropdown.addEventListener("change", handleSort);
         searchInput.addEventListener("input", handleSearch);
+
+        const editInput = document.getElementById("edit-input");
+        editInput.style.visibility = "hidden";
+        const cancelButton = document.querySelector(".cancel-button");
+        const saveButton = document.querySelector(".save-button");
+        const editItemSpan = document.getElementById("edit-item");
+        const priceInput = document.getElementById("price-input");
+        const costInput = document.getElementById("cost-input");
+        const itemIdInput = document.getElementById("itemId");
+
+        // Add here
+        tableBody.addEventListener("keydown", (event) => {
+            if (event.key === "e" && !onOther) {
+                const focusedRow = document.activeElement; 
+                if (focusedRow.tagName === "TR") {
+                    const cells = focusedRow.cells;
+
+                    const itemId = cells[0].textContent.trim();
+                    const itemName = cells[1].textContent.trim();
+                    const price = cells[3].textContent.trim();
+                    const cost = cells[4].textContent.trim();
+
+                    itemIdInput.value = itemId;
+                    editItemSpan.textContent = itemName;
+                    priceInput.value = price;
+                    costInput.value = cost;
+
+                    onOther = true;
+
+                    editInput.style.visibility = "visible";
+                    bodyDiv.classList.add("blur");
+                }
+            }
+        });
+
+        cancelButton.addEventListener("click", () => {
+            onOther = false;
+            editInput.style.visibility = "hidden";
+            bodyDiv.classList.remove("blur");
+        });
+
+        saveButton.addEventListener("click", (event) => {
+            editInput.style.visibility = "hidden";
+            bodyDiv.classList.remove("blur");
+            onOther = false;
+        });
+
+        const addButton = document.getElementById("add-item");
+        const addCancelButton = document.querySelector(".add-cancel-button");
+        const addSaveButton = document.querySelector(".add-save-button");
+        const addInput = document.getElementById("add-input");
+        addInput.style.visibility = "hidden";
+
+        const addPriceInput = document.getElementById("add-price-input");
+        const addCostInput = document.getElementById("add-cost-input");
+        const addItemId = document.getElementById("add-itemId");
+        const addItemName = document.getElementById("add-itemName");
+
+        addButton.addEventListener("click", () => {
+            if (!onOther) {
+                addInput.style.visibility = "visible";
+                bodyDiv.classList.add("blur");
+                addItemId.focus();
+                onOther = true;
+            }
+        });
+
+        addCancelButton.addEventListener("click", () => {
+            addPriceInput.value = "";
+            addCostInput.value = "";
+            addItemId.value = "";
+            addItemName.value = "";
+            onOther = false;
+            addInput.style.visibility = "hidden";
+            bodyDiv.classList.remove("blur");
+        });
+
+        addSaveButton.addEventListener("click", (event) => {
+            addInput.style.visibility = "hidden";
+            bodyDiv.classList.remove("blur");
+            onOther = false;
+        });
+
+        function validateInput(event) {
+            const input = event.target;
+            let value = input.value;
+
+            const validPattern = /^(0|[1-9]\d*)(\.\d{0,2})?$/;
+
+            if (!validPattern.test(value)) {
+                input.value = value.slice(0, -1);
+            }
+        }
+
+        function validateIdInput(event) {
+            const input = event.target;
+            let value = input.value;
+
+            const validPattern = /^[a-zA-Z0-9]*$/;
+
+            if (!validPattern.test(value)) {
+                input.value = value.replace(/[^a-zA-Z0-9]/g, '');
+                return;
+            }
+
+            input.value = value.toUpperCase();
+        }
+
+        addItemId.addEventListener("input", validateIdInput);
+        addPriceInput.addEventListener("input", validateInput);
+        addCostInput.addEventListener("input", validateInput);
+        priceInput.addEventListener("input", validateInput);
+        costInput.addEventListener("input", validateInput);
     });
 </script>
 

@@ -73,72 +73,69 @@
             </div>
         </div>
     </body>
-<script>
-    const type = document.getElementById("report-type");
-    const aggregate = document.getElementById("report-aggregate");
-    const start = document.getElementById("report-start-date");
-    const end = document.getElementById("report-end-date");
-    const error = document.getElementById("error-message");
+    <script>
+        const type = document.getElementById("report-type");
+        const aggregate = document.getElementById("report-aggregate");
+        const start = document.getElementById("report-start-date");
+        const end = document.getElementById("report-end-date");
+        const error = document.getElementById("error-message");
 
-    document.getElementById("report-type").addEventListener("change", function () {
-        const selectedOption = this.value;
-        const groupDiv = document.querySelector(".group");
-        const dateDiv = document.querySelector(".form-option:nth-child(3)"); 
-        const reportAggregate = document.getElementById("report-aggregate");
+        document.getElementById("report-type").addEventListener("change", function () {
+            const selectedOption = this.value;
+            const groupDiv = document.querySelector(".group");
+            const dateDiv = document.querySelector(".form-option:nth-child(3)"); 
+            const reportAggregate = document.getElementById("report-aggregate");
 
-        if (selectedOption === "Item Aging") {
-            groupDiv.style.display = "none";
-            dateDiv.style.display = "none";
-            reportAggregate.selectedIndex = 0;
-        } else if (selectedOption === "Deliveries" || selectedOption === "Item Performance") {
-            groupDiv.style.display = "none";
-            dateDiv.style.display = "flex";
-            reportAggregate.selectedIndex = 0;
-        } else {
-            groupDiv.style.display = "flex";
-            dateDiv.style.display = "flex";
+            if (selectedOption === "Item Aging") {
+                groupDiv.style.display = "none";
+                dateDiv.style.display = "none";
+                reportAggregate.selectedIndex = 0;
+            } else if (selectedOption === "Deliveries" || selectedOption === "Item Performance") {
+                groupDiv.style.display = "none";
+                dateDiv.style.display = "flex";
+                reportAggregate.selectedIndex = 0;
+            } else {
+                groupDiv.style.display = "flex";
+                dateDiv.style.display = "flex";
+            }
+        });
+
+        function validateFields() {
+            const typeValue = type.value;
+            const aggregateValue = aggregate.value;
+            const startValue = start.value;
+            const endValue = end.value;
+
+            if (!typeValue) {
+                showError("Please select a report type");
+                return false;
+            }
+
+            if (typeValue !== "Item Aging" && typeValue !== "Deliveries" && typeValue !== "Item Performance" && !aggregateValue) {
+                showError("Please select a report group");
+                return false;
+            }
+
+            if (typeValue !== "Item Aging" && (!startValue || !endValue)) {
+                showError("Please select both start and end dates");
+                return false;
+            }
+
+            if (typeValue !== "Item Aging" && new Date(startValue) > new Date(endValue)) {
+                showError("Start date must be on or before end date");
+                return false;
+            }
+
+            return true;
         }
-    });
 
-    function validateFields() {
-        const typeValue = type.value;
-        const aggregateValue = aggregate.value;
-        const startValue = start.value;
-        const endValue = end.value;
-
-        if (!typeValue) {
-            showError("Please select a report type");
-            return false;
+        function showError(message) {
+            error.textContent = message;
+            error.hidden = false;
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 5000);
         }
-
-        if (typeValue !== "Item Aging" && typeValue !== "Deliveries" && typeValue !== "Item Performance" && !aggregateValue) {
-            showError("Please select a report group");
-            return false;
-        }
-
-        if (typeValue !== "Item Aging" && (!startValue || !endValue)) {
-            showError("Please select both start and end dates");
-            return false;
-        }
-
-        if (typeValue !== "Item Aging" && new Date(startValue) > new Date(endValue)) {
-            showError("Start date must be on or before end date");
-            return false;
-        }
-
-        return true;
-    }
-
-    function showError(message) {
-        error.textContent = message;
-        error.hidden = false;
-        error.style.opacity = 1;
-        setTimeout(() => {
-            error.style.opacity = 0;
-        }, 5000);
-    }
-</script>
-
-
-
+    </script>
 </html>

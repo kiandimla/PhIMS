@@ -5,7 +5,6 @@
         <link rel="stylesheet" type="text/css" href="../stylesheets/inventory.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/reports.css">
         <link rel="icon" type="image/x-icon" href="/images/favicon.png">
-        <script src="../scripts/table2excel.js"></script>
     </head>
     <body>
         {{!-- Header --}}
@@ -52,22 +51,22 @@
                     </div>
                     {{/ifNot}}
                     <div class="input-container excel" id="excel-button">
-                        Export as .xlsx
+                        Export as .pdf
                     </div>
                 </div>
-                <div class="report-table-container">
-                    <table class="report-table">
+                <div id="report-table-container" class="report-table-container">
+                    <table id="report-table" class="report-table">
                         <thead>
                             <tr>
                                 <th colspan="{{arrayLength columns}}" class="header">
                                     <span class="bold tgp">The Generics Pharmacy</span>
                                     <br />
-                                    <span class="normal">{{aggregate}} {{type}} Report</span>
+                                    <span id="report-name" class="normal">{{aggregate}} {{type}} Report</span>
                                 </th>
                             </tr>
                             {{#ifNot type "Item Aging"}}
                             <tr>
-                                <th colspan="{{arrayLength columns}}" class="header">
+                                <th colspan="{{arrayLength columns}}" class="header" id="report-range">
                                     Date Range: {{start}} - {{end}}
                                 </th>
                             </tr>
@@ -165,86 +164,114 @@
             </div>
         </div>
     </body>
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const numberCells = document.querySelectorAll('td.number');
-        numberCells.forEach(cell => {
-            const value = cell.textContent.trim();
+    <script src="../scripts/html2pdf.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const numberCells = document.querySelectorAll('td.number');
+            numberCells.forEach(cell => {
+                const value = cell.textContent.trim();
 
-            if (!isNaN(value) && value !== "") {
-                cell.textContent = Number(value).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-            }
-        });
-
-        const excelButton = document.getElementById('excel-button');
-        excelButton.addEventListener('click', function() {
-            var table2excel = new Table2Excel();
-            table2excel.export(document.querySelectorAll(".report-table"));
-        });
-
-        const sortDropdown = document.getElementById('sort');
-        const orderDropdown = document.getElementById('order');
-        const tableBody = document.querySelector('.report-table tbody');
-
-        function disableDropdowns(disabled) {
-            sortDropdown.disabled = disabled;
-            orderDropdown.disabled = disabled;
-        }
-
-        function isDate(value) {
-            return value.includes('/');
-        }
-
-        function parseValue(value, cellClassList) {
-            if (cellClassList.contains('int') || cellClassList.contains('number')) {
-                return parseFloat(value.replace(/,/g, '')) || 0; 
-            }
-            if (isDate(value)) {
-                return new Date(value); 
-            }
-            return value.toLowerCase(); 
-        }
-
-        function sortTable(sortIndex, order) {
-            const rows = Array.from(tableBody.rows);
-
-            rows.sort((rowA, rowB) => {
-                const cellA = rowA.cells[sortIndex];
-                const cellB = rowB.cells[sortIndex];
-
-                const valueA = parseValue(cellA.textContent.trim(), cellA.classList);
-                const valueB = parseValue(cellB.textContent.trim(), cellB.classList);
-
-                if (valueA < valueB) {
-                    return order === 'Ascending' ? -1 : 1;
+                if (!isNaN(value) && value !== "") {
+                    cell.textContent = Number(value).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
                 }
-                if (valueA > valueB) {
-                    return order === 'Ascending' ? 1 : -1;
-                }
-                return 0;
             });
 
-            rows.forEach(row => tableBody.appendChild(row));
+            const name = document.getElementById('report-name');
+            const range = document.getElementById('report-range');
+            const excelButton = document.getElementById('excel-button');
 
-            disableDropdowns(false);
-        }
+            const getFormattedDate = () => {
+                const today = new Date();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const year = today.getFullYear();
+                return `${month}/${day}/${year}`;
+            };
 
-        function handleSort() {
-            const sortBy = sortDropdown.selectedIndex - 1; 
-            const order = orderDropdown.value;
+            excelButton.addEventListener('click', function() {
+                const table = document.getElementById("report-table-container");
+                const reportName = name.textContent.trim();
 
-            if (sortBy >= 0 && order) {
-                disableDropdowns(true); 
-                sortTable(sortBy, order); 
+                let dateRange = range ? range.textContent.replace("Date Range: ", "").trim() : "";
+
+                const filename = dateRange
+                    ? `${reportName} (${dateRange})`
+                    : `${reportName} (${getFormattedDate()})`;
+
+                var opt = {
+                    margin:             0.5,
+                    filename:           filename,
+                    image:              {type: 'jpeg', quality: 0.98},
+                    html2canvas:        {scale: 1.5},
+                    jsPDF:              {unit: 'in', format: 'letter', orientation: 'portrait'}
+                };
+
+                html2pdf(table, opt);
+            });
+
+            const sortDropdown = document.getElementById('sort');
+            const orderDropdown = document.getElementById('order');
+            const tableBody = document.querySelector('.report-table tbody');
+
+            function disableDropdowns(disabled) {
+                sortDropdown.disabled = disabled;
+                orderDropdown.disabled = disabled;
             }
-        }
 
-        sortDropdown.addEventListener('change', handleSort);
-        orderDropdown.addEventListener('change', handleSort);
-    });
+            function isDate(value) {
+                return value.includes('/');
+            }
 
-</script>
+            function parseValue(value, cellClassList) {
+                if (cellClassList.contains('int') || cellClassList.contains('number')) {
+                    return parseFloat(value.replace(/,/g, '')) || 0; 
+                }
+                if (isDate(value)) {
+                    return new Date(value); 
+                }
+                return value.toLowerCase(); 
+            }
+
+            function sortTable(sortIndex, order) {
+                const rows = Array.from(tableBody.rows);
+
+                rows.sort((rowA, rowB) => {
+                    const cellA = rowA.cells[sortIndex];
+                    const cellB = rowB.cells[sortIndex];
+
+                    const valueA = parseValue(cellA.textContent.trim(), cellA.classList);
+                    const valueB = parseValue(cellB.textContent.trim(), cellB.classList);
+
+                    if (valueA < valueB) {
+                        return order === 'Ascending' ? -1 : 1;
+                    }
+                    if (valueA > valueB) {
+                        return order === 'Ascending' ? 1 : -1;
+                    }
+                    return 0;
+                });
+
+                rows.forEach(row => tableBody.appendChild(row));
+
+                disableDropdowns(false);
+            }
+
+            function handleSort() {
+                const sortBy = sortDropdown.selectedIndex - 1; 
+                const order = orderDropdown.value;
+
+                if (sortBy >= 0 && order) {
+                    disableDropdowns(true); 
+                    sortTable(sortBy, order); 
+                }
+            }
+
+            sortDropdown.addEventListener('change', handleSort);
+            orderDropdown.addEventListener('change', handleSort);
+        });
+
+    </script>
 </html>

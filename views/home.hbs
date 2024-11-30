@@ -27,30 +27,48 @@
                 <span class="title-card">Home</span>
                 <div class="border flex center">
                     <div class="dashboard">
-                        <button class="sales" onclick="window.location.href='/encode-sales'">
-                            Sales
+                        <button class="sales center" onclick="window.location.href='/encode-sales'">
+                            <div class="flex column center">
+                                <img src="../images/sales.png"> 
+                                <span>Encode Sales</span>
+                            </div>
                         </button>
 
                         <button onclick="window.location.href='/encode-deliveries'">
-                            Deliveries
+                            <div class="flex column center">
+                                <img src="../images/deliveries.png"> 
+                                <span>Encode Deliveries</span>
+                            </div>
                         </button>
 
                         <button onclick="window.location.href='/generate-reports'">
-                            Reports
+                            <div class="flex column center">
+                                <img src="../images/reports.png"> 
+                                <span>Reports</span>
+                            </div>
                         </button>
 
                         <button onclick="window.location.href='/inventory'">
-                            Inventory
+                            <div class="flex column center">
+                                <img src="../images/inventory.png"> 
+                                <span>Inventory</span>
+                            </div>
                         </button>
 
                         {{#if user.isAdmin 1}} 
                         <button onclick="window.location.href='/users'">
-                            Users
+                           <div class="flex column center">
+                                <img src="../images/users.png"> 
+                                <span>Users</span>
+                            </div>
                         </button>
                         {{/if}}
 
                         <button class="eoq" onclick="window.location.href='/ooq'">
-                            OOQ
+                            <div class="flex column center">
+                                <img src="../images/order.png"> 
+                                <span>Generate OOQs</span>
+                            </div>
                         </button>
                     </div>
 

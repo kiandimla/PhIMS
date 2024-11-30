@@ -9,18 +9,21 @@
 
 button {
     font-family: "SF";
-    text-align: left;
+    text-align: center;
     border-radius: 10px;
     padding: 10px;
+    height: 100px;
+    width: 150px;
     align-self: center;
+
     background-color: white;
     color: #3e3e3e;
     font-size: medium;
     font-weight: bold;
     border: solid 2px var(--border);
     box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+
     transition: background-color 0.3s ease;
-    padding-top: 50px;
     margin: 10px;
 } button:hover {
     background-color: var(--primary);
@@ -28,7 +31,7 @@ button {
     color: white;
 }
 
-.button img {
+button img {
     width: 50px;
     margin-bottom: 10px;
 }
@@ -61,11 +64,4 @@ a {
 .eoq {
     background-color: #23A55A;
     border: solid 2px #23A55A;
-}
-
-.sales {
-    background-image: url("../images/sales.png");
-    background-position: center;
-    background-size: 45px;
-    background-repeat: no-repeat;
 }

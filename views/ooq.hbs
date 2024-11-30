@@ -5,7 +5,6 @@
         <link rel="stylesheet" type="text/css" href="../stylesheets/inventory.css">
         <link rel="stylesheet" type="text/css" href="../stylesheets/reports.css">
         <link rel="icon" type="image/x-icon" href="/images/favicon.png">
-        <script src="../scripts/table2excel.js"></script>
     </head>
     <body>
         {{!-- Header --}}
@@ -47,7 +46,7 @@
                         </select> 
                     </div>
                     <div class="input-container excel" id="excel-button">
-                        Export as .xlsx
+                        Export as .pdf
                     </div>
                 </div>
                 <div class="report-table-container">
@@ -77,82 +76,102 @@
             </div>
         </div>
     </body>
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const numberCells = document.querySelectorAll('td.number');
-        numberCells.forEach(cell => {
-            const value = cell.textContent.trim();
+    <script src="../scripts/html2pdf.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const numberCells = document.querySelectorAll('td.number');
+            numberCells.forEach(cell => {
+                const value = cell.textContent.trim();
 
-            if (!isNaN(value) && value !== "") {
-                cell.textContent = Number(value).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-            }
-        });
-
-        const excelButton = document.getElementById('excel-button');
-        excelButton.addEventListener('click', function() {
-            var table2excel = new Table2Excel();
-            table2excel.export(document.querySelectorAll(".report-table"));
-        });
-
-        const sortDropdown = document.getElementById('sort');
-        const orderDropdown = document.getElementById('order');
-        const tableBody = document.querySelector('.report-table tbody');
-
-        const columnMapping = {
-            "Avg Weekly Demand": 2, 
-            "Optimal Order Quantity": 6 
-        };
-
-        function disableDropdowns(disabled) {
-            sortDropdown.disabled = disabled;
-            orderDropdown.disabled = disabled;
-        }
-
-        function parseValue(value, cellClassList) {
-            if (cellClassList.contains('int') || cellClassList.contains('number')) {
-                const parsedValue = parseFloat(value.replace(/,/g, ''));
-                return isNaN(parsedValue) ? 0 : parsedValue; 
-            }
-            return value.toLowerCase().trim(); 
-        }
-
-        function sortTable(sortIndex, order) {
-            const rows = Array.from(tableBody.rows);
-
-            rows.sort((rowA, rowB) => {
-                const cellA = rowA.cells[sortIndex];
-                const cellB = rowB.cells[sortIndex];
-
-                const valueA = parseValue(cellA.textContent.trim(), cellA.classList);
-                const valueB = parseValue(cellB.textContent.trim(), cellB.classList);
-
-                if (valueA < valueB) return order === 'Ascending' ? -1 : 1;
-                if (valueA > valueB) return order === 'Ascending' ? 1 : -1;
-                return 0;
+                if (!isNaN(value) && value !== "") {
+                    cell.textContent = Number(value).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
             });
 
-            rows.forEach(row => tableBody.appendChild(row));
+            const getFormattedDate = () => {
+                const today = new Date();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const year = today.getFullYear();
+                return `${month}/${day}/${year}`;
+            };
 
-            disableDropdowns(false);
-        }
+            const excelButton = document.getElementById('excel-button');
+            excelButton.addEventListener('click', function() {
+                const table = document.querySelector(".report-table-container");
 
-        function handleSort() {
-            const sortColumnName = sortDropdown.value;
-            const sortBy = columnMapping[sortColumnName]; 
-            const order = orderDropdown.value;
+                const filename = `OOQs (${getFormattedDate()})`;
 
-            if (sortBy !== undefined && (order === 'Ascending' || order === 'Descending')) {
-                disableDropdowns(true);
-                sortTable(sortBy, order);
+                var opt = {
+                    margin:             0.5,
+                    filename:           filename,
+                    image:              {type: 'jpeg', quality: 0.98},
+                    html2canvas:        {scale: 1.5},
+                    jsPDF:              {unit: 'in', format: 'letter', orientation: 'portrait'}
+                };
+
+                html2pdf(table, opt);
+            });
+
+            const sortDropdown = document.getElementById('sort');
+            const orderDropdown = document.getElementById('order');
+            const tableBody = document.querySelector('.report-table tbody');
+
+            const columnMapping = {
+                "Avg Weekly Demand": 2, 
+                "Optimal Order Quantity": 6 
+            };
+
+            function disableDropdowns(disabled) {
+                sortDropdown.disabled = disabled;
+                orderDropdown.disabled = disabled;
             }
-        }
 
-        sortDropdown.addEventListener('change', handleSort);
-        orderDropdown.addEventListener('change', handleSort);
-    });
+            function parseValue(value, cellClassList) {
+                if (cellClassList.contains('int') || cellClassList.contains('number')) {
+                    const parsedValue = parseFloat(value.replace(/,/g, ''));
+                    return isNaN(parsedValue) ? 0 : parsedValue; 
+                }
+                return value.toLowerCase().trim(); 
+            }
 
-</script>
+            function sortTable(sortIndex, order) {
+                const rows = Array.from(tableBody.rows);
+
+                rows.sort((rowA, rowB) => {
+                    const cellA = rowA.cells[sortIndex];
+                    const cellB = rowB.cells[sortIndex];
+
+                    const valueA = parseValue(cellA.textContent.trim(), cellA.classList);
+                    const valueB = parseValue(cellB.textContent.trim(), cellB.classList);
+
+                    if (valueA < valueB) return order === 'Ascending' ? -1 : 1;
+                    if (valueA > valueB) return order === 'Ascending' ? 1 : -1;
+                    return 0;
+                });
+
+                rows.forEach(row => tableBody.appendChild(row));
+
+                disableDropdowns(false);
+            }
+
+            function handleSort() {
+                const sortColumnName = sortDropdown.value;
+                const sortBy = columnMapping[sortColumnName]; 
+                const order = orderDropdown.value;
+
+                if (sortBy !== undefined && (order === 'Ascending' || order === 'Descending')) {
+                    disableDropdowns(true);
+                    sortTable(sortBy, order);
+                }
+            }
+
+            sortDropdown.addEventListener('change', handleSort);
+            orderDropdown.addEventListener('change', handleSort);
+        });
+
+    </script>
 </html>

@@ -1,0 +1,101 @@
+<html>
+    <head>
+        <title>Reset Password</title>
+        <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/login.css">
+        <link rel="icon" type="image/x-icon" href="/images/favicon.png">
+    </head>
+    <body>
+        <div class="body-div" reset-status-data="{{resetStatus}}">
+            <form id="reset-form" action="/confirm-reset" method="post">
+                <div class="login-container">
+                    <div class="reset">
+                        Reset Password
+                    </div>
+
+                    <input class="reset-name" id="name" type="text" name="name" placeholder="Username" required>
+                    <input class="reset-key" id="key" type="password" name="key" placeholder="Key" required>
+
+                    <input id="password" type="password" name="password" placeholder="New Password" required>
+                    <input id="password1" type="password" name="password1" placeholder="Confirm New Password" required>
+                    
+                    <button class="cancel-button" type="button" onclick="window.location.href='/'">Back</button>
+                    <button class="reset-button" type="submit" onclick="return validateFields()">Reset</button>
+                </div>
+            </form>
+            <span class="error-message" id="error-message" hidden></span>
+        </div>
+    </body>
+    <script>
+        function validateFields() {
+            const password = document.getElementById("password").value;
+            const password1 = document.getElementById("password1").value;
+
+            const error = document.getElementById("error-message");
+
+            if (password !== password1) {
+                error.textContent = "Passwords do not match";
+                error.style.backgroundColor = "tomato";
+                error.hidden = false;
+                error.style.opacity = 1;
+                setTimeout(() => {
+                    error.style.opacity = 0;
+                }, 3000);
+                return false;
+            }
+
+            error.hidden = true;
+            return true; 
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const error = document.getElementById("error-message");
+            const body = document.querySelector('.body-div');
+            const reset = body.getAttribute('reset-status-data');
+            if (reset === "true") {
+                error.textContent = "Reset successful";
+                error.style.backgroundColor = "limegreen";
+                error.hidden = false;
+                error.style.opacity = 1;
+                setTimeout(() => {
+                    error.style.opacity = 0;
+                }, 3000);
+            } else if (reset === "false") {
+                error.textContent = "Username and key invalid";
+                error.style.backgroundColor = "tomato";
+                error.hidden = false;
+                error.style.opacity = 1;
+                setTimeout(() => {
+                    error.style.opacity = 0;
+                }, 3000);
+            }
+            const name = document.getElementById("name");
+            const key = document.getElementById("key");
+            const password = document.getElementById("password");
+            const password1 = document.getElementById("password1");
+
+            window.onload = () => { 
+                name.focus();
+            };
+
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    if (document.activeElement === name) {
+                        key.focus();
+                    } else if (document.activeElement === key) {
+                        password.focus();
+                    } else if (document.activeElement === password) {
+                        password1.focus();
+                    } else if (document.activeElement === password1) {
+                        if (password1.value.trim() !== "") {
+                            form.submit();
+                        } else {
+                            name.focus();
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</html>
