@@ -54,7 +54,7 @@
                         Export as .pdf
                     </div>
                 </div>
-                <div id="report-table-container" class="report-table-container">
+                <div id="report-table-container" class="report-table-container{{#if type "Stock Card"}} stock-card{{/if}}">
                     <table id="report-table" class="report-table">
                         <thead>
                             <tr>
@@ -158,6 +158,46 @@
                                 </tr>
                                 {{/if}}
                             {{/each}}
+                            {{!-- Insert totals here --}}
+                            {{#if type "Sales"}}
+                            <tr class="totals">
+                                <td class="center">Total :</td>
+                                <td class="int"></td>
+                                <td class="int"></td>
+                                <td class="number"></td>
+                                <td class="number"></td>
+                                <td class="number"></td>
+                            </tr>
+                            {{/if}}
+                            {{#if type "Profit"}} 
+                            <tr class="totals">
+                                <td class="center">Total :</td>
+                                <td class="int"></td>
+                                <td class="int"></td>
+                                <td class="number"></td>
+                                <td class="number"></td>
+                                <td class="number"></td>
+                                <td class="number bold"></td>
+                            </tr>
+                            {{/if}}
+                            {{#if type "Deliveries"}} 
+                            <tr class="totals">
+                                <td></td>
+                                <td>Total :</td>
+                                <td class="int"></td>
+                                <td class="number bold"></td>
+                            </tr>
+                            {{/if}}
+                            {{#if type "Item Performance"}} 
+                            <tr class="totals">
+                                <td></td>
+                                <td>Total :</td>
+                                <td class="int"></td>
+                                <td class="number"></td>
+                                <td class="number"></td>
+                                <td class="number bold"></td>
+                            </tr>
+                            {{/if}}
                         </tbody>
                     </table>
                 </div>
@@ -237,8 +277,11 @@
 
             function sortTable(sortIndex, order) {
                 const rows = Array.from(tableBody.rows);
+                
+                const regularRows = rows.filter(row => !row.classList.contains('totals'));
+                const totalsRows = rows.filter(row => row.classList.contains('totals'));
 
-                rows.sort((rowA, rowB) => {
+                regularRows.sort((rowA, rowB) => {
                     const cellA = rowA.cells[sortIndex];
                     const cellB = rowB.cells[sortIndex];
 
@@ -254,10 +297,12 @@
                     return 0;
                 });
 
-                rows.forEach(row => tableBody.appendChild(row));
+                regularRows.forEach(row => tableBody.appendChild(row));
+                totalsRows.forEach(row => tableBody.appendChild(row));
 
                 disableDropdowns(false);
             }
+
 
             function handleSort() {
                 const sortBy = sortDropdown.selectedIndex - 1; 
@@ -271,6 +316,41 @@
 
             sortDropdown.addEventListener('change', handleSort);
             orderDropdown.addEventListener('change', handleSort);
+
+            const totalsRows = tableBody.querySelectorAll('.totals');
+
+            function calculateTotals() {
+                const columnsCount = tableBody.rows[0]?.cells.length || 0;
+                const totalsData = Array(columnsCount).fill(0);
+
+                Array.from(tableBody.rows).forEach(row => {
+                    if (row.classList.contains('totals')) return; // Skip totals rows
+
+                    Array.from(row.cells).forEach((cell, index) => {
+                        if (cell.classList.contains('int') || cell.classList.contains('number')) {
+                            const value = parseFloat(cell.textContent.replace(/,/g, '')) || 0;
+                            totalsData[index] += value;
+                        }
+                    });
+                });
+
+                totalsRows.forEach(row => {
+                    Array.from(row.cells).forEach((cell, index) => {
+                        if (cell.classList.contains('int')) {
+                            cell.textContent = totalsData[index].toLocaleString(undefined, {
+                                maximumFractionDigits: 0
+                            }); // No decimals for 'int' cells
+                        } else if (cell.classList.contains('number')) {
+                            cell.textContent = totalsData[index].toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                        }
+                    });
+                });
+            }
+
+            calculateTotals();
         });
 
     </script>

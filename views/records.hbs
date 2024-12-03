@@ -1,0 +1,143 @@
+<html>
+    <head>
+        <title>Records</title>
+        <link rel="stylesheet" type="text/css" href="../stylesheets/base.css">
+        <link rel="stylesheet" type="text/css" href="../stylesheets/inventory.css">
+        <link rel="icon" type="image/x-icon" href="/images/favicon.png">
+    </head>
+    <body>
+        {{!-- Header --}}
+        <div class="header-div">
+            <img class="logo" src="../images/logo.png">
+            <div class="flex center">
+                <ul>
+                    <li><a class="header-divider"></a></li>
+                    <li><a class="header-button" href="/home">Home</a></li>
+                    <li><a class="header-divider">></a></li>
+                    <li><a class="header-button on-page">Records</a></li>
+                </ul>
+            </div>
+            <div class="sign-out">
+                <div>
+                    <span>{{user.name}}</span> <br />
+                    <a class="sign-out-button" href="/">Sign Out</a>
+                </div>
+            </div>
+        </div>
+        <div class="body-div">
+            <div class="flex column container">
+                <div class="flex nav">
+                    <span class="title-card">Records</span>
+                    <div class="input-container">
+                        Record Type: 
+                        <select id="type">
+                            <option></option>
+                            <option>Sale</option>
+                            <option>Delivery</option>
+                        </select> 
+                    </div>
+                </div>
+                <div id="sales-table" class="table-container">
+                    <table class="inventory-table sales-table">
+                        <thead>
+                            <tr>
+                                <th>Invoice Num</th>
+                                <th>Date</th>
+                                <th>Item ID</th>
+                                <th class="item-name">Item Name</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Discount %</th>
+                                <th>Discounted</th>
+                                <th>Remarks</th>
+                                <th>Amount</th>
+                                <th>Sale Total</th>
+                                <th>Encoder</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each salesResults}}
+                            <tr tabindex="0">
+                                <td>{{invoiceNum}}</td>
+                                <td>{{date}}</td>
+                                <td>{{itemId}}</td>
+                                <td>{{itemName}}</td>
+                                <td>{{price}}</td>
+                                <td>{{quantity}}</td>
+                                <td>{{discountPercent}}</td>
+                                <td>{{isDiscounted}}</td>
+                                <td>{{discountRemarks}}</td>
+                                <td>{{itemSubtotal}}</td>
+                                <td>{{saleTotal}}</td>
+                                <td>{{encodePerson}}</td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="deliveries-table" class="table-container">
+                    <table class="inventory-table sales-table">
+                        <thead>
+                            <tr>
+                                <th>Invoice Num</th>
+                                <th>Date</th>
+                                <th>Item ID</th>
+                                <th class="item-name">Item Name</th>
+                                <th>Cost</th>
+                                <th>Quantity</th>
+                                <th>Expiry</th>
+                                <th>Amount</th>
+                                <th>Delivery Total</th>
+                                <th>Encode Date</th>
+                                <th>Encoder</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each deliveriesResults}}
+                            <tr>
+                                <td>{{invoiceNum}}</td>
+                                <td>{{date}}</td>
+                                <td>{{itemId}}</td>
+                                <td class="item-name">{{itemName}}</td>
+                                <td>{{cost}}</td>
+                                <td>{{quantity}}</td>
+                                <td>{{expiry}}</td>
+                                <td>{{itemSubtotal}}</td>
+                                <td>{{deliveryTotal}}</td>
+                                <td>{{encodeDate}}</td>
+                                <td>{{encodePerson}}</td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </body>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const typeDropdown = document.getElementById("type");
+        const salesTable = document.getElementById("sales-table");
+        const deliveriesTable = document.getElementById("deliveries-table");
+
+        typeDropdown.addEventListener("change", function () {
+            const selectedValue = typeDropdown.value;
+
+            if (selectedValue === "Sale") {
+                salesTable.style.display = "table";
+                deliveriesTable.style.display = "none";
+            } else if (selectedValue === "Delivery") {
+                salesTable.style.display = "none";
+                deliveriesTable.style.display = "table";
+            } else {
+                salesTable.style.display = "none";
+                deliveriesTable.style.display = "none";
+            }
+        });
+
+        salesTable.style.display = "none";
+        deliveriesTable.style.display = "none";
+    });
+</script>
+</html>

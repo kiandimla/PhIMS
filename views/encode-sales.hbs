@@ -31,7 +31,7 @@
                     <button id="save-sale-button" onclick="return validateFields()" type="submit" hidden></button>
                     <div class="flex">
                         <div class="si-container">
-                            SI <input name="saleId" type="text" placeholder="SI Number" value="{{lastSaleSi}}" /> 
+                            SI <input name="invoiceNum" type="text" placeholder="SI Number" value="{{lastSaleSi}}" /> 
                         </div>
                         <div class="si-container">
                            Discount: <span class="discount-display"> 20%</span>
@@ -168,7 +168,7 @@
         const discountInputField = discountInput.querySelector('input[name="discount-input"]');
         const remarksInputField = discountInput.querySelector('input[name="remarks-input"]');
 
-        const saleIdInput = document.querySelector('input[name="saleId"]');
+        const saleIdInput = document.querySelector('input[name="invoiceNum"]');
         const error = document.getElementById("error-message");
 
         let searchBuffer = "";

@@ -2,8 +2,6 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    width: 70%;
-    max-width: 600px;
     margin: 0 auto; 
 }
 
@@ -54,8 +52,9 @@ a {
 
 .border {
     background-color: white;
-    width: 700px;
-    height: 350px;
+    width: fit-content;
+    height: fit-content;
+    padding: 10px;
     border-radius: 20px;
     border: solid 2px var(--contrast);
     box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
@@ -64,4 +63,12 @@ a {
 .eoq {
     background-color: #23A55A;
     border: solid 2px #23A55A;
+}
+
+.body-div {
+    background-color: #fcedee;
+    background-image: url(../images/faded-logo.png);
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    background-size: 350px;
 }

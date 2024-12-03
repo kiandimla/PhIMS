@@ -24,18 +24,24 @@
                 </div>
             </div>
         </div>
-        <div class="body-div">
+        <div class="body-div" add-user-status-data="{{addUserStatus}}" delete-user-status-data="{{deleteUserStatus}}">
             <div class="flex column container">
                 <div class="flex nav">
                     <span class="title-card">Users</span>
+
+                    {{#if user.isAdmin 1}}
+                    <div id="add-user" class="input-container add-item">
+                        Add User
+                    </div>
+                    {{/if}}
                 </div>
+                
                 <div class="table-container">
                     <table class="inventory-table">
                         <thead>
                             <tr>
                                 <th class="wide">Name</th>
                                 <th class="middle">Admin</th>
-                                
                             </tr>
                         </thead>
                         <tbody>
@@ -62,5 +68,225 @@
                 </div>
             </div>
         </div>
+        <div id="add-user-input" class="flex column overlay-input">
+            <form action="/add-user" class="flex column" method="post">
+                <span class="add-title">Add User:</span>
+
+                <span class="id">Username: </span>
+                <input id="username" class="edit-input" name="name" type="text" required>
+
+                <span class="name">Key: </span>
+                <input id="key" class="edit-input" name="key" type="password" required>
+
+                <span class="name">Confirm Key: </span>
+                <input id="key1" class="edit-input" name="key1" type="password" required>
+ 
+                <span class="price">Password: </span>
+                <input id="password" class="edit-input" type="password" name="password" value="" required>
+            
+                <span class="cost">Confirm Password: </span>
+                <input id="password1" class="edit-input" type="password" name="password1" value="" required>
+
+                <span class="cost">Admin: </span>
+                <div>
+                    <div class="checkbox-wrapper-2">
+                        <input id="admin" type="checkbox" name="admin" class="sc-gJwTLC ikxBAC" />
+                    </div>
+                </div>
+
+                <div class="center">
+                    <button class="add-cancel-button" type="button">Cancel</button>
+                    <button class="add-save-button" onclick="return validateFields()" type="submit">Add</button>
+                </div>
+            </form>
+        </div>
+        <div id="confirm-deletion" class="flex column overlay-input">
+            <form action="/delete-user" class="flex column" method="post">
+                <span class="edit-title">Confirm Deletion of User:</span>
+
+                <span id="user-to-delete" class="edit-item">
+
+                </span>
+
+                <input id="user-delete" name="user" type="hidden">
+                <div class="center">
+                    <button class="cancel-button" type="button">Cancel</button>
+                    <button class="save-button" type="submit">Confirm</button>
+                </div>
+            </form>
+        </div>
+        <span class="error-message" id="error-message" hidden></span>
     </body>
+<script>
+    var onOther;
+    function validateFields() {
+        const usernameInput = document.getElementById('username').value.trim();
+        const keyInput = document.getElementById('key').value;
+        const keyConfirmInput = document.getElementById('key1').value;
+        const passwordInput = document.getElementById('password').value;
+        const passwordConfirmInput = document.getElementById('password1').value;
+        const error = document.getElementById('error-message');
+
+        const tableRows = document.querySelectorAll('.inventory-table tbody tr');
+        for (let row of tableRows) {
+            const nameCell = row.querySelector('td.wide').innerText.trim().toLowerCase(); 
+            if (usernameInput.toLowerCase() === nameCell) { 
+                error.textContent = "User already exists";
+                error.style.backgroundColor = "tomato";
+                error.hidden = false;
+                error.style.opacity = 1;
+                setTimeout(() => {
+                    error.style.opacity = 0;
+                }, 3000);
+                return false;
+            }
+        }
+
+        if (keyInput !== keyConfirmInput) {
+            error.textContent = "Keys do not match";
+            error.style.backgroundColor = "tomato";
+            error.hidden = false;
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 3000);
+            return false;
+        }
+
+        if (passwordInput !== passwordConfirmInput) {
+            error.textContent = "Passwords do not match";
+            error.style.backgroundColor = "tomato";
+            error.hidden = false;
+            error.style.opacity = 1;
+            setTimeout(() => {
+                error.style.opacity = 0;
+            }, 3000);
+            return false;
+        }
+
+        return true;
+    }
+
+    const addButton = document.getElementById("add-user");
+    const addInput = document.getElementById("add-user-input");
+    addInput.style.visibility = "hidden";
+
+    const bodyDiv = document.querySelector(".body-div");
+    const addCancelButton = document.querySelector(".add-cancel-button");
+
+    addButton.addEventListener("click", () => {
+        if (!onOther) {
+            onOther = true;
+            addInput.style.visibility = "visible";
+            bodyDiv.classList.add("blur");
+        }
+    });
+
+    addCancelButton.addEventListener("click", () => {
+        addInput.style.visibility = "hidden";
+        bodyDiv.classList.remove("blur");
+        onOther = false;
+    });
+
+    const user = bodyDiv.getAttribute('add-user-status-data');
+    const deleteStatus = bodyDiv.getAttribute('delete-user-status-data');
+    const error = document.getElementById('error-message');
+
+    if (user === "true") {
+        error.textContent = "Added successfully";
+        error.style.backgroundColor = "limegreen";
+        error.hidden = false;
+        error.style.opacity = 1;
+        setTimeout(() => {
+            error.style.opacity = 0;
+        }, 3000);
+    } else if (user === "false") {
+        error.textContent = "Add failed";
+        error.style.backgroundColor = "tomato";
+        error.hidden = false;
+        error.style.opacity = 1;
+        setTimeout(() => {
+            error.style.opacity = 0;
+        }, 3000);
+    }
+
+    if (deleteStatus === "true") {
+        error.textContent = "Deleted successfully";
+        error.style.backgroundColor = "limegreen";
+        error.hidden = false;
+        error.style.opacity = 1;
+        setTimeout(() => {
+            error.style.opacity = 0;
+        }, 3000);
+    } else if (deleteStatus === "false") {
+        error.textContent = "Delete failed";
+        error.style.backgroundColor = "tomato";
+        error.hidden = false;
+        error.style.opacity = 1;
+        setTimeout(() => {
+            error.style.opacity = 0;
+        }, 3000);
+    }
+
+    const tableBody = document.querySelector(".inventory-table tbody"); 
+    const confirmDeletionModal = document.getElementById("confirm-deletion");
+    confirmDeletionModal.style.visibility = "hidden";
+
+    const userToDeleteDisplay = document.getElementById("user-to-delete");
+    const userToDeleteHidden = document.getElementById("user-delete");
+
+    const signedInUserName = document.querySelector(".sign-out span").textContent.trim();
+
+    tableBody.addEventListener("keydown", (event) => {
+        if (event.key === "Delete" && !onOther) {
+            const focusedRow = document.activeElement;
+            if (focusedRow.tagName === "TR") {
+                const cells = focusedRow.cells; 
+
+                const userName = cells[0].textContent.trim();
+                const isAdmin = cells[1].querySelector('.circle.green') !== null;
+
+                if (userName === signedInUserName) {
+                    displayError("Cannot delete the signed-in user.");
+                    return; 
+                }
+
+                if (isAdmin) {
+                    displayError("Cannot delete admin users.");
+                    return; 
+                }
+
+                userToDeleteDisplay.textContent = userName;
+                userToDeleteHidden.value = userName;
+                onOther = true; 
+
+                confirmDeletionModal.style.visibility = "visible";
+                bodyDiv.classList.add("blur");
+
+                const cancelButton = document.querySelector(".cancel-button");
+                cancelButton.addEventListener("click", () => {
+                    confirmDeletionModal.style.visibility = "hidden";
+                    bodyDiv.classList.remove("blur");
+                    userToDeleteDisplay.textContent = "";
+                    userToDeleteHidden.value = "";
+                    onOther = false; 
+                });
+            }
+        }
+    });
+
+    const tableRows = document.querySelectorAll(".inventory-table tbody tr");
+    tableRows.forEach(row => row.setAttribute("tabindex", "0"));
+
+    function displayError(message) {
+        const error = document.getElementById("error-message");
+        error.textContent = message;
+        error.style.backgroundColor = "tomato";
+        error.hidden = false;
+        error.style.opacity = 1;
+        setTimeout(() => {
+            error.style.opacity = 0;
+        }, 3000);
+    }
+</script>
 </html>

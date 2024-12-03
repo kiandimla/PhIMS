@@ -24,7 +24,7 @@
                 </div>
             </div>
         </div>
-        <div class="body-div" edit-status-data="{{editStatus}}" add-status-data="{{addStatus}}">
+        <div class="body-div" edit-status-data="{{editStatus}}" add-status-data="{{addStatus}}" is-admin-data="{{user.isAdmin}}">
             <div class="flex column container">
                 <div class="flex nav">
                     <span class="title-card">Inventory</span>
@@ -51,16 +51,19 @@
                     <div class="input-container">
                         <input id="search" name="search" type="text" placeholder="Search">
                     </div>
+                    {{#if user.isAdmin 1}}
                     <div id="add-item" class="input-container add-item">
                         Add Item
                     </div>
+                    {{/if}}
                 </div>
                 <div class="table-container">
                     <table class="inventory-table">
                         <thead>
                             <tr>
-                                <th>Item Code</th>
+                                <th>Item ID</th>
                                 <th class="item-name">Item Name</th>
+                                <th>Perishable</th>
                                 <th class="number">Quantity</th>
                                 <th class="number">Price</th>
                                 <th class="number">Cost</th>
@@ -73,6 +76,7 @@
                             <tr tabindex="0">
                                 <td>{{itemId}}</td>
                                 <td class="item-name">{{itemName}}</td>
+                                 <td>{{#if isPerishable 1}}Yes{{/if}}{{#if isPerishable 0}}No{{/if}}</td>
                                 <td class="number">{{quantity}}</td>
                                 <td class="number">{{price}}</td>
                                 <td class="number">{{cost}}</td>
@@ -89,7 +93,7 @@
             <form action="/edit-item" class="flex column" method="post">
                 <span class="edit-title">Edit Item:</span>
                 <span id="edit-item" class="edit-item"></span>
-                <input id="itemId" name="itemId" type="hidden" value=""></input>
+                <input id="itemId" name="itemId" type="hidden" value="">
  
                 <span class="price">Price: </span>
                 <input id="price-input" class="edit-input" type="text" name="price" value="" required>
@@ -109,10 +113,10 @@
                 <span class="add-title">Add Item:</span>
 
                 <span class="id">Item ID: </span>
-                <input id="add-itemId" class="edit-input" name="itemId" type="text"></input>
+                <input id="add-itemId" class="edit-input" name="itemId" type="text" required>
 
                 <span class="name">Item name: </span>
-                <input id="add-itemName" class="edit-input" name="itemName" type="text"></input>
+                <input id="add-itemName" class="edit-input" name="itemName" type="text" required>
  
                 <span class="price">Price: </span>
                 <input id="add-price-input" class="edit-input" type="text" name="price" value="" required>
@@ -168,6 +172,7 @@
         const bodyDiv = document.querySelector(".body-div");
         const edit = bodyDiv.getAttribute('edit-status-data');
         const add = bodyDiv.getAttribute('add-status-data');
+        const admin = bodyDiv.getAttribute('is-admin-data');
         const columnMap = {
             "Item Name": 1,
             "Quantity": 2,
@@ -279,9 +284,8 @@
         const costInput = document.getElementById("cost-input");
         const itemIdInput = document.getElementById("itemId");
 
-        // Add here
         tableBody.addEventListener("keydown", (event) => {
-            if (event.key === "e" && !onOther) {
+            if (event.key === "e" && !onOther && admin === "1") {
                 const focusedRow = document.activeElement; 
                 if (focusedRow.tagName === "TR") {
                     const cells = focusedRow.cells;

@@ -77,7 +77,7 @@ input[type="text"] {
     font-size: large;
 }
 
-input[name="saleId"] {
+input[name="invoiceNum"] {
     width: 130px;
     margin-left: 5px;
 }

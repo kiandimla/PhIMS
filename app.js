@@ -80,8 +80,122 @@ function initializePLU() {
 
 initializePLU();
 
+var deleteUserStatus;
+app.post('/delete-user', async function (req, res) {
+    if (!user) return res.redirect('/');
+
+    try {
+        const name = req.body.user;
+
+        const query = `
+            DELETE FROM users
+            WHERE name = ?;
+        `;
+
+        connection.query(query, [name], (err, results) => {
+                if (err) {
+                    console.error('Error adding user:', err);
+                    deleteUserStatus = false;
+                    return res.redirect('/users');
+                }
+                deleteUserStatus = true;
+                res.redirect('/users');
+            }
+        );
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        res.status(500).send('Unexpected error occurred');
+        deleteUserStatus = false;
+        res.redirect('/users');
+    }
+});
+
+var addUserStatus;
+app.post('/add-user', async function (req, res) {
+    if (!user) return res.redirect('/');
+
+    try {
+        const { name, key, password } = req.body;
+        const admin = req.body.admin ? 1 : 0
+
+        const query = `
+            INSERT INTO users (name, \`key\`, password, isAdmin) 
+            VALUES (?, ?, ?, ?);
+        `;
+
+        connection.query(query, [name, key, password, admin], (err, results) => {
+                if (err) {
+                    console.error('Error adding user:', err);
+                    addUserStatus = false;
+                    return res.redirect('/users');
+                }
+                addUserStatus = true;
+                res.redirect('/users');
+            }
+        );
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        res.status(500).send('Unexpected error occurred');
+        addUserStatus = false;
+        res.redirect('/users');
+    }
+});
+
+app.get('/records', async function(req, res) {
+    if (!user) return res.redirect('/');
+    try {
+        
+        const salesQuery = `
+            SELECT invoiceNum, date, itemId, itemName, price, quantity, discountPercent, isDiscounted, 
+                   discountRemarks, itemSubtotal, saleTotal, encodePerson
+            FROM PhIMS.sales;
+        `;
+
+        const deliveriesQuery = `
+        SELECT 
+            invoiceNum,
+            invoicePage,
+            date,
+            itemId,
+            itemName,
+            cost,
+            quantity,
+            expiry,
+            itemSubtotal,
+            invoicePageTotal,
+            encodeDate,
+            encodePerson
+        FROM PhIMS.deliveries;
+        `;
+
+        connection.query(salesQuery, (err, salesResults) => {
+            if (err) {
+                console.error('Error fetching distinct invoice numbers from sales:', err);
+                return res.redirect('/home');
+            }
+
+            connection.query(deliveriesQuery, (err, deliveriesResults) => {
+                if (err) {
+                    console.error('Error fetching distinct invoice numbers from deliveries:', err);
+                    return res.redirect('/home');
+                }
+
+                res.render('records', {
+                    user,
+                    salesResults,
+                    deliveriesResults
+                });            
+            });
+        });
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        res.status(500).send('Unexpected error occurred');
+    }
+});
+
 app.get('/users', async function(req, res) {
     if (!user) return res.redirect('/');
+    if (user.isAdmin !== 1) return res.redirect('/home');
     try {
         const query = `
             SELECT name, isAdmin FROM users;
@@ -93,7 +207,9 @@ app.get('/users', async function(req, res) {
                 return;
             }
             const users = results;
-            res.render('users', { user, users });
+            res.render('users', { user, users, addUserStatus, deleteUserStatus });
+            deleteUserStatus = undefined;
+            addUserStatus = undefined;
         });
     } catch (error) {
         console.error('Unexpected error:', error);
@@ -270,6 +386,7 @@ app.get('/inventory', async function(req, res) {
                 inventory.itemId,
                 inventory.itemName,
                 inventory.quantity,
+                PLU.isPerishable,
                 PLU.price,
                 PLU.cost,
                 ROUND((PLU.price - PLU.cost), 2) AS markup,
@@ -414,7 +531,7 @@ app.post('/reports', async function (req, res) {
                 case 'Monthly':
                     groupByClause = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%m/%Y')";
                     selectAdditionalField = `
-                        DATE_FORMAT(STR_TO_DATE(\`sales\`.\`date\`, '%m/%Y')) AS \`DateRange\``;
+                        DATE_FORMAT(STR_TO_DATE(\`sales\`.\`date\`, '%m/%d/%Y'), '%m/%Y') AS \`DateRange\``;
                     dateFormat = "DATE_FORMAT(STR_TO_DATE(`sales`.`date`, '%m/%d/%Y'), '%m/%Y')";
                     break;
                 case 'Yearly':
@@ -709,7 +826,7 @@ app.post('/reports', async function (req, res) {
                         i.itemId, i.itemName, i.quantity, ts.TotalSales
                 ) AS SubQuery
                 WHERE
-                    Aged1to30 > 0 OR Aged31to60 > 0 OR Aged61to90 > 0 OR Aged91Plus > 0;
+                    Aged1to30 > 0 OR Aged31to60 > 0 OR Aged61to90 > 0 OR Aged91Plus > 0 OR Untracked != 10;
             `;
 
             connection.query(sql, [], (error, results) => {
@@ -818,28 +935,25 @@ app.get('/generate-reports', async function(req, res) {
 });
 
 function getNextDeliveryIds(count, callback) {
-    const gapQuery = `
-        WITH RECURSIVE sequence AS (
-            SELECT 1 AS nextId
-            UNION ALL
-            SELECT nextId + 1 FROM sequence WHERE nextId < (SELECT COALESCE(MAX(deliveryId) + ${count}, ${count}) FROM deliveries)
-        )
-        SELECT nextId
-        FROM sequence
-        LEFT JOIN deliveries ON sequence.nextId = deliveries.deliveryId
-        WHERE deliveries.deliveryId IS NULL
-        LIMIT ?;
+    const getMaxDeliveryIdQuery = `
+        SELECT COALESCE(MAX(CAST(deliveryId AS UNSIGNED)), 0) AS maxDeliveryId
+        FROM deliveries;
     `;
 
-    connection.query(gapQuery, [count], (error, results) => {
+    connection.query(getMaxDeliveryIdQuery, (error, results) => {
         if (error) {
-            console.error('Error fetching deliveryIds:', error);
+            console.error('Error fetching the maximum deliveryId:', error);
             callback(error, null);
             return;
         }
 
-        const ids = results.map(row => row.nextId);
-        callback(null, ids);
+        const maxDeliveryId = parseInt(results[0].maxDeliveryId, 10); // Convert to integer
+        const nextDeliveryIds = Array.from({ length: count }, (_, i) => {
+            const incremented = maxDeliveryId + i + 1; // Increment for each ID
+            return incremented.toString().padStart(results[0].maxDeliveryId.toString().length, '0'); // Pad with leading zeros
+        });
+
+        callback(null, nextDeliveryIds);
     });
 }
 
@@ -861,7 +975,7 @@ function insertDeliveryItems(delivery) {
             quantity, 
             expiry,
             itemSubtotal, 
-            deliveryTotal, 
+            invoicePageTotal, 
             encodeDate, 
             encodePerson
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1006,39 +1120,55 @@ app.get('/encode-deliveries', async function(req, res) {
 });
 
 function getNextSaleIds(count, callback) {
-    const gapQuery = `
-        WITH RECURSIVE sequence AS (
-            SELECT 1 AS nextId
-            UNION ALL
-            SELECT nextId + 1 FROM sequence WHERE nextId < (SELECT COALESCE(MAX(saleId) + ${count}, ${count}) FROM sales)
-        )
-        SELECT nextId
-        FROM sequence
-        LEFT JOIN sales ON sequence.nextId = sales.saleId
-        WHERE sales.saleId IS NULL
-        LIMIT ?;
+    const getMaxSaleIdQuery = `
+        SELECT COALESCE(MAX(CAST(saleId AS UNSIGNED)), 0) AS maxSaleId
+        FROM sales;
     `;
 
-    connection.query(gapQuery, [count], (error, results) => {
+    connection.query(getMaxSaleIdQuery, (error, results) => {
         if (error) {
-            console.error('Error fetching saleIds:', error);
+            console.error('Error fetching the maximum saleId:', error);
             callback(error, null);
             return;
         }
 
-        const ids = results.map(row => row.nextId);
-        callback(null, ids);
+        const maxSaleId = parseInt(results[0].maxSaleId, 10); // Convert to an integer
+        const nextSaleIds = Array.from({ length: count }, (_, i) => maxSaleId + i + 1); // Generate next saleIds
+
+        callback(null, nextSaleIds);
     });
 }
 
-function incrementLastSaleSi(saleId) {
-    const numericPart = parseInt(saleId, 10); 
+function incrementLastSaleSi() {
+    const numericPart = parseInt(lastSaleSi, 10); 
     const incremented = numericPart + 1; 
-    const padded = incremented.toString().padStart(saleId.length, '0'); 
-    return padded;
+    const padded = incremented.toString().padStart(lastSaleSi.length, '0'); 
+    lastSaleSi = padded;
 }
 
 function insertSaleItems(saleData) {
+    if (!saleData.invoiceNum) {
+        console.error('Error: invoiceNum is missing from saleData');
+        return;
+    }
+
+    const today = new Date();
+    const encodeDate = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
+
+    const discountRate = parseInt(saleData.discount, 10) || 0;
+
+    const checkExistingSql = `
+        SELECT itemId, quantity, price
+        FROM sales
+        WHERE invoiceNum = ?
+    `;
+
+    const updateItemSql = `
+        UPDATE sales
+        SET quantity = quantity + ?
+        WHERE invoiceNum = ? AND itemId = ?
+    `;
+
     const insertSql = `
         INSERT INTO sales (
             saleId,
@@ -1063,93 +1193,151 @@ function insertSaleItems(saleData) {
         WHERE invoiceNum = ?
     `;
 
+    const calculateTotalSql = `
+        SELECT SUM(quantity * price) AS total
+        FROM sales
+        WHERE invoiceNum = ?
+    `;
+
     const updateInventorySql = `
         UPDATE inventory
         SET quantity = quantity - ?
         WHERE itemId = ? AND quantity >= ?;
     `;
 
-    const today = new Date();
-    const encodeDate = `${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}/${today.getFullYear()}`;
-
-    const itemCount = saleData.items.length;
-    const discountRate = parseInt(saleData.discount, 10) || 0;
-
-    connection.query(`SELECT saleTotal FROM sales WHERE invoiceNum = ?`, [lastSaleSi], (error, results) => {
-        if (error) {
-            console.error('Error checking existing sale total:', error);
+    connection.query(checkExistingSql, [saleData.invoiceNum], (checkError, existingItems) => {
+        if (checkError) {
+            console.error('Error checking existing items:', checkError);
             return;
         }
 
-        let existingSaleTotal = results.length > 0 ? parseFloat(results[0].saleTotal) : 0;
+        const isNewTransaction = existingItems.length === 0;
+        if (isNewTransaction) {
+            lastSaleSi = saleData.invoiceNum;
+            incrementLastSaleSi();
+            console.log('Incremented lastSaleSi for a new transaction');
+        }
 
-        const newSaleTotal = parseFloat(saleData['sale-total']);
-        const updatedTotal = existingSaleTotal + newSaleTotal;
+        const existingItemMap = existingItems.reduce((map, item) => {
+            map[item.itemId] = item.quantity;
+            return map;
+        }, {});
 
-        connection.query(updateTotalSql, [updatedTotal, lastSaleSi], (updateError) => {
-            if (updateError) {
-                console.error('Error updating sale total:', updateError);
+        let itemsToInsert = [];
+        let itemsToUpdate = [];
+
+        saleData.items.forEach(item => {
+            const itemId = getItemIdByName(item.name);
+            const quantity = parseInt(item.quantity, 10);
+            const price = parseFloat(item.price);
+
+            if (existingItemMap[itemId]) {
+                // If item exists in the transaction, prepare to update quantity
+                itemsToUpdate.push({
+                    invoiceNum: saleData.invoiceNum,
+                    itemId,
+                    quantity, // Add new quantity
+                });
+            } else {
+                // If item does not exist, prepare to insert as a new row
+                itemsToInsert.push({
+                    itemId,
+                    name: item.name,
+                    price,
+                    quantity,
+                    discountPercent: item.discount === 'on' ? discountRate || 20 : 0,
+                    isDiscounted: item.discount === 'on' ? 1 : 0,
+                    discountRemarks: item.discount === 'on' ? saleData.remarks || 'Default' : 'No Discount',
+                });
+            }
+        });
+
+        // Process updates
+        const updatePromises = itemsToUpdate.map(updateItem =>
+            new Promise((resolve, reject) => {
+                connection.query(updateItemSql, [updateItem.quantity, saleData.invoiceNum, updateItem.itemId], (updateError) => {
+                    if (updateError) {
+                        console.error('Error updating item quantity:', updateError);
+                        reject(updateError);
+                    } else {
+                        console.log('Updated item quantity for itemId:', updateItem.itemId);
+                        resolve();
+                    }
+                });
+            })
+        );
+
+        // Process inserts
+        getNextSaleIds(itemsToInsert.length, (idError, ids) => {
+            if (idError) {
+                console.error('Error getting next sale IDs:', idError);
                 return;
             }
-            console.log(`Updated saleTotal for invoiceNum ${lastSaleSi} to ${updatedTotal}`);
 
-            getNextSaleIds(itemCount, (idError, ids) => {
-                if (idError) {
-                    console.error('Error getting next saleIds:', idError);
-                    return;
-                }
-
-                if (ids.length < itemCount) {
-                    console.error('Insufficient sale IDs generated for items.');
-                    return;
-                }
-
-                saleData.items.forEach((item, index) => {
-                    const itemId = getItemIdByName(item.name);
-
+            const insertPromises = itemsToInsert.map((item, index) =>
+                new Promise((resolve, reject) => {
                     const values = [
                         ids[index],                            // saleId - unique for each item
-                        lastSaleSi,                            // invoiceNum
+                        saleData.invoiceNum,                  // invoiceNum
                         encodeDate,                            // date
-                        itemId,                                // itemId from PLU lookup
+                        item.itemId,                           // itemId from PLU lookup
                         item.name,                             // itemName
-                        parseFloat(item.price),                // price
-                        parseInt(item.quantity, 10),           // quantity
-                        item.discount === 'on' ? discountRate || 20 : 0, // discountPercent (use saleData.discount if discount is 'on')
-                        item.discount === 'on' ? 1 : 0,        // isDiscounted
-                        item.discount === 'on' ? saleData.remarks || 'Default' : 'No Discount', // discountRemarks (only if discounted)
-                        parseFloat(item.amount),               // itemSubtotal
-                        updatedTotal,                          // saleTotal (use the updated total)
-                        user.name                                   // encodePerson
+                        item.price,                            // price
+                        item.quantity,                         // quantity
+                        item.discountPercent,                  // discountPercent
+                        item.isDiscounted,                     // isDiscounted
+                        item.discountRemarks,                  // discountRemarks
+                        item.price * item.quantity,            // itemSubtotal
+                        0,                                     // saleTotal will be updated later
+                        user.name                              // encodePerson
                     ];
 
-                    console.log("saleId:", ids[index], "itemId:", itemId);
-
-                    connection.query(insertSql, values, (insertError, results) => {
+                    connection.query(insertSql, values, (insertError) => {
                         if (insertError) {
-                            console.error('Error inserting sale data:', insertError);
+                            console.error('Error inserting new item:', insertError);
+                            reject(insertError);
                         } else {
-                            console.log('Sale data inserted successfully for item:', item.name, results);
-
-                            const quantity = parseInt(item.quantity, 10);
-                            connection.query(updateInventorySql, [quantity, itemId, quantity], (updateInvError, updateInvResults) => {
-                                if (updateInvError) {
-                                    console.error('Error updating inventory for item:', item.name, updateInvError);
-                                } else {
-                                    if (updateInvResults.affectedRows === 0) {
-                                        console.error(`Insufficient inventory for item: ${item.name}`);
-                                    } else {
-                                        console.log(`Inventory updated successfully for item: ${item.name}`);
-                                    }
-                                }
-                            });
+                            console.log('Inserted new item:', item.name);
+                            resolve();
                         }
                     });
-                });
 
-                lastSaleSi = incrementLastSaleSi(lastSaleSi);
-                console.log('Updated lastSaleSi:', lastSaleSi);
-            });
+                    // Update inventory for inserted item
+                    connection.query(updateInventorySql, [item.quantity, item.itemId, item.quantity], (updateInvError, updateInvResults) => {
+                        if (updateInvError) {
+                            console.error('Error updating inventory for item:', item.name, updateInvError);
+                        } else {
+                            console.log('Inventory updated successfully for item:', item.name);
+                        }
+                    });
+                })
+            );
+
+            // Wait for all updates and inserts to finish
+            Promise.all([...updatePromises, ...insertPromises])
+                .then(() => {
+                    // Calculate the total for the entire transaction
+                    connection.query(calculateTotalSql, [saleData.invoiceNum], (calcError, calcResults) => {
+                        if (calcError) {
+                            console.error('Error calculating sale total:', calcError);
+                            return;
+                        }
+
+                        const saleTotal = calcResults[0]?.total || 0;
+
+                        // Update sale total for the entire transaction
+                        connection.query(updateTotalSql, [saleTotal, saleData.invoiceNum], (updateTotalError) => {
+                            if (updateTotalError) {
+                                console.error('Error updating sale total:', updateTotalError);
+                            } else {
+                                console.log(`Updated sale total for invoiceNum: ${saleData.invoiceNum} to ${saleTotal}`);
+                            }
+                        });
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error processing updates or inserts:', error);
+                });
         });
     });
 }
@@ -1161,7 +1349,6 @@ app.post('/save-sale', async function(req, res) {
         console.log('Sale Data:', req.body);
 
         const saleData = req.body;
-        lastSaleSi = req.body.saleId;
         
         insertSaleItems(saleData); 
         
@@ -1180,6 +1367,7 @@ app.get('/encode-sales', async function(req, res) {
                 inventory.itemId,
                 inventory.itemName,
                 inventory.quantity,
+                PLU.isExempt,
                 PLU.price,
                 PLU.cost
             FROM inventory

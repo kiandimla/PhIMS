@@ -54,7 +54,6 @@ tbody tr:focus {
     box-shadow: rgba(78, 78, 78, 0.35) 0px 1px 10px;
 }
 
-
 .container {
     position: absolute;
     top: 15%;
@@ -224,7 +223,7 @@ button {
     border-radius: 6px;
     align-self: center;
     position: absolute;
-    transform: translate(0, -50%);
+    transform: translate(-50%, -50%);
     left: 50%;
     top: 10%;
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
@@ -307,4 +306,20 @@ button {
 
 .checkbox-wrapper-2 .ikxBAC:checked:hover {
     background-color: #535db3;
+}
+
+.center {
+    text-align: center;
+}
+
+.sales-table thead tr, .sales-table tbody tr {
+    font-size: 9px;
+}
+
+#add-user-input {
+    height: 400px;
+}
+
+#confirm-deletion {
+    height: 80px;
 }
