@@ -1,2 +1,2 @@
 # PhIMS
-Inventory Management System that tracks sales, incoming items, and item performance. Generates EOQs based on sales performance data to improve decision making capabilities and generates comprehensive reports for data gathering and insights.
+An Inventory Mangement System that records sales transactions, purchase orders, and stock levels. Additionaly, provides calculated Optimal Order Quantity (OOQ) values to optimize the procurement process of the store using the system. To give insights for data analysis, the system also generates comprehensive sales, profits, deliveries, item aging, item performance, and stock card reports. Sales encoding supports barcode scanner input.
